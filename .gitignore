@@ -1,0 +1,17 @@
+# IDE/Editor specific files
+.DS_Store
+.vscode/
+
+# Build artifacts and temporary files
+build/
+dist/
+temp/
+*.log
+
+# Sensitive information (e.g., API keys, credentials)
+secrets.json
+config.json
+
+# GAS project-specific files (adjust as needed based on your tools)
+.clasp.json
+.clasp-credentials.json
