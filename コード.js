@@ -70,9 +70,19 @@ function onFormSubmit(e) {
     response = UrlFetchApp.fetch(rankUrl);
     json = JSON.parse(response.getContentText());
     if (json.length > 0) {
-      const tier = json[0]["tier"]
-      const rank = json[0]["rank"]
-      sheet.getRange(lastRow, 11).setValue(`${tier} ${rank}`);
+      const soloRank = json.find(r => r["queueType"] === "RANKED_SOLO_5x5");
+      const flexRank = json.find(r => r["queueType"] === "RANKED_FLEX_SR");
+      if (soloRank) {
+        const tier = soloRank["tier"];
+        const rank = soloRank["rank"];
+        sheet.getRange(lastRow, 11).setValue(`${tier} ${rank}`);
+      } else if (flexRank) {
+        const tier = json[0]["tier"]
+        const rank = json[0]["rank"]
+        sheet.getRange(lastRow, 11).setValue(`${tier} ${rank}`);
+      } else {
+        sheet.getRange(lastRow, 11).setValue("アンランク/情報なし");
+      }
     } else {
       sheet.getRange(lastRow, 11).setValue("アンランク/情報なし");
     }
