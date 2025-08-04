@@ -76,18 +76,24 @@ function onFormSubmit(e) {
         const tier = soloRank["tier"];
         const rank = soloRank["rank"];
         sheet.getRange(lastRow, 11).setValue(`${tier} ${rank}`);
-      } else if (flexRank) {
-        const tier = json[0]["tier"]
-        const rank = json[0]["rank"]
-        sheet.getRange(lastRow, 11).setValue(`${tier} ${rank}`);
       } else {
         sheet.getRange(lastRow, 11).setValue("アンランク/情報なし");
       }
+
+      if (flexRank) {
+        const tier = json[0]["tier"]
+        const rank = json[0]["rank"]
+        sheet.getRange(lastRow, 12).setValue(`${tier} ${rank}`);
+      } else {
+        sheet.getRange(lastRow, 12).setValue("アンランク/情報なし");
+      }
     } else {
       sheet.getRange(lastRow, 11).setValue("アンランク/情報なし");
+      sheet.getRange(lastRow, 12).setValue("アンランク/情報なし");
     }
   } else {
     sheet.getRange(lastRow, 11).setValue("アンランク");
+    sheet.getRange(lastRow, 12).setValue("アンランク");
   }
 
   // Riot APIで宣言レーンのマッチ数とチャンピオンプール取得
