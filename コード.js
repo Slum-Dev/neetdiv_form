@@ -61,11 +61,11 @@ function onFormSubmit(e) {
   const summonerUrl = `https://jp1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`
   response = UrlFetchApp.fetch(summonerUrl);
   json = JSON.parse(response.getContentText());
-  const summounerLevel = json["summonerLevel"]
-  sheet.getRange(lastRow, 9).setValue(summounerLevel);
+  const summonerLevel = json["summonerLevel"]
+  sheet.getRange(lastRow, 9).setValue(summonerLevel);
 
   // サモナーレベルが30以上であれば追加でランクの情報を取得
-  if (summounerLevel >= 30) {
+  if (summonerLevel >= 30) {
     const rankUrl = `https://jp1.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}?api_key=${apiKey}`
     response = UrlFetchApp.fetch(rankUrl);
     json = JSON.parse(response.getContentText());
