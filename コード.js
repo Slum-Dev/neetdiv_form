@@ -46,7 +46,7 @@ function onFormSubmit(e) {
   const summonerId = decodeURIComponent(tagPart);
 
   // コピペ用
-  sheet.getRange(lastRow, 8).setValue(`${summonerName}#${summonerId}`);
+  sheet.getRange(lastRow, 9).setValue(`${summonerName}#${summonerId}`);
 
   // Riot APIキー取得
   const apiKey = PropertiesService.getScriptProperties().getProperty("API_KEY");
@@ -62,7 +62,7 @@ function onFormSubmit(e) {
   response = UrlFetchApp.fetch(summonerUrl);
   json = JSON.parse(response.getContentText());
   const summonerLevel = json["summonerLevel"]
-  sheet.getRange(lastRow, 9).setValue(summonerLevel);
+  sheet.getRange(lastRow, 10).setValue(summonerLevel);
 
   // サモナーレベルが30以上であれば追加でランクの情報を取得
   if (summonerLevel >= 30) {
@@ -72,12 +72,12 @@ function onFormSubmit(e) {
     if (json.length > 0) {
       const tier = json[0]["tier"]
       const rank = json[0]["rank"]
-      sheet.getRange(lastRow, 10).setValue(`${tier} ${rank}`);
+      sheet.getRange(lastRow, 11).setValue(`${tier} ${rank}`);
     } else {
-      sheet.getRange(lastRow, 10).setValue("アンランク/情報なし");
+      sheet.getRange(lastRow, 11).setValue("アンランク/情報なし");
     }
   } else {
-    sheet.getRange(lastRow, 10).setValue("アンランク");
+    sheet.getRange(lastRow, 11).setValue("アンランク");
   }
 
   // Riot APIで宣言レーンのマッチ数とチャンピオンプール取得
