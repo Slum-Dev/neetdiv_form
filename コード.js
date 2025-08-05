@@ -27,15 +27,15 @@ function onFormSubmit(e) {
   const lastRow = sheet.getLastRow();
 
   // 宣言レーン
-  const role = sheet.getRange(lastRow, 6).getValue();
+  const role = sheet.getRange(lastRow, 7).getValue();
 
   // OPGG URLからサモナー名とサモナーIDを取得
   // OPGG URL
-  const opggUrl = sheet.getRange(lastRow, 7).getValue();
+  const opggUrl = sheet.getRange(lastRow, 8).getValue();
   // OPGG URLのクレンジング
   let cleanedUrl = opggUrl
     .replace(/\/(champions|mastery|ingame)$/, "");
-  sheet.getRange(lastRow, 7).setFormula(`=HYPERLINK("${cleanedUrl}", "${cleanedUrl}")`);
+  sheet.getRange(lastRow, 8).setFormula(`=HYPERLINK("${cleanedUrl}", "${cleanedUrl}")`);
 
   let encodedSummonerNI = cleanedUrl.split("/").pop();
   if (encodedSummonerNI.includes("?")) {
@@ -46,7 +46,7 @@ function onFormSubmit(e) {
   const summonerId = decodeURIComponent(tagPart);
 
   // コピペ用
-  sheet.getRange(lastRow, 9).setValue(`${summonerName}#${summonerId}`);
+  sheet.getRange(lastRow, 10).setValue(`${summonerName}#${summonerId}`);
 
   // Riot APIキー取得
   const apiKey = PropertiesService.getScriptProperties().getProperty("API_KEY");
@@ -62,7 +62,7 @@ function onFormSubmit(e) {
   response = UrlFetchApp.fetch(summonerUrl);
   json = JSON.parse(response.getContentText());
   const summonerLevel = json["summonerLevel"]
-  sheet.getRange(lastRow, 10).setValue(summonerLevel);
+  sheet.getRange(lastRow, 11).setValue(summonerLevel);
 
   // サモナーレベルが30以上であれば追加でランクの情報を取得
   if (summonerLevel >= 30) {
@@ -75,25 +75,25 @@ function onFormSubmit(e) {
       if (soloRank) {
         const tier = soloRank["tier"];
         const rank = soloRank["rank"];
-        sheet.getRange(lastRow, 11).setValue(`${tier} ${rank}`);
+        sheet.getRange(lastRow, 12).setValue(`${tier} ${rank}`);
       } else {
-        sheet.getRange(lastRow, 11).setValue("アンランク/情報なし");
+        sheet.getRange(lastRow, 12).setValue("アンランク/情報なし");
       }
 
       if (flexRank) {
         const tier = json[0]["tier"]
         const rank = json[0]["rank"]
-        sheet.getRange(lastRow, 12).setValue(`${tier} ${rank}`);
+        sheet.getRange(lastRow, 13).setValue(`${tier} ${rank}`);
       } else {
-        sheet.getRange(lastRow, 12).setValue("アンランク/情報なし");
+        sheet.getRange(lastRow, 13).setValue("アンランク/情報なし");
       }
     } else {
-      sheet.getRange(lastRow, 11).setValue("アンランク/情報なし");
       sheet.getRange(lastRow, 12).setValue("アンランク/情報なし");
+      sheet.getRange(lastRow, 13).setValue("アンランク/情報なし");
     }
   } else {
-    sheet.getRange(lastRow, 11).setValue("アンランク");
     sheet.getRange(lastRow, 12).setValue("アンランク");
+    sheet.getRange(lastRow, 13).setValue("アンランク");
   }
 
   // Riot APIで宣言レーンのマッチ数とチャンピオンプール取得
