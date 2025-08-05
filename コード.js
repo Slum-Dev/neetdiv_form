@@ -95,6 +95,9 @@ function onFormSubmit(e) {
     sheet.getRange(lastRow, 12).setValue("アンランク");
     sheet.getRange(lastRow, 13).setValue("アンランク");
   }
+  
+  // puuid
+  sheet.getRange(lastRow, 14).setValue(`${puuid}`);
 
   // Riot APIで宣言レーンのマッチ数とチャンピオンプール取得
   // const matchListUrl = `https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=20&api_key=${apiKey}`
