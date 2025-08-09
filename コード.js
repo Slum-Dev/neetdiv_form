@@ -52,10 +52,18 @@ function onFormSubmit(e) {
 
   // プレイヤーのUUIDを取得
   const puuid = riot.getAccountPuuid(summonerName, summonerId);
+  if(!puuid) {
+    sheet.getRange(lastRow, 14).setValue('Err: Riotアカウントの問い合わせに失敗しました。OPGG URLが正しいか確認してください。');
+    return;
+  }
   sheet.getRange(lastRow, 14).setValue(`${puuid}`);
 
   // プレイヤーのサモナーレベルを取得
   const summonerLevel = riot.getSummonerLevel(puuid);
+  if(!summonerLevel) {
+    sheet.getRange(lastRow, 11).setValue('Err: サモナーレベルの取得に失敗しました。');
+    return;
+  }
   sheet.getRange(lastRow, 11).setValue(summonerLevel);
 
   // サモナーレベルが30以上であれば追加でランクの情報を取得
@@ -64,15 +72,19 @@ function onFormSubmit(e) {
     sheet.getRange(lastRow, 13).setValue("情報なし");
 
     const rank = riot.getRankInfo(puuid);
-    if (rank) {
-      sheet.getRange(lastRow, 12).setValue("アンランク");
-      sheet.getRange(lastRow, 13).setValue("アンランク");
-      if (rank.solo) {
-        sheet.getRange(lastRow, 12).setValue(`${rank.solo.tier} ${rank.solo.rank}`);
-      }
-      if (rank.flex) {
-        sheet.getRange(lastRow, 13).setValue(`${rank.flex.tier} ${rank.flex.rank}`);
-      }
+    if(!rank) {
+      sheet.getRange(lastRow, 12).setValue('Err: ランクの取得に失敗しました。');
+      sheet.getRange(lastRow, 13).setValue('Err: ランクの取得に失敗しました。');
+      return;
+    }
+
+    sheet.getRange(lastRow, 12).setValue("アンランク");
+    sheet.getRange(lastRow, 13).setValue("アンランク");
+    if (rank.solo) {
+      sheet.getRange(lastRow, 12).setValue(`${rank.solo.tier} ${rank.solo.rank}`);
+    }
+    if (rank.flex) {
+      sheet.getRange(lastRow, 13).setValue(`${rank.flex.tier} ${rank.flex.rank}`);
     }
   }
 
