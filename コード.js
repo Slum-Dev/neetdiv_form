@@ -1,21 +1,20 @@
 function onFormSubmit(e) {
-
   // フォームでのロールとRiot APIのロール表記互換Map
   const roleMap = {
-    "TOP": "TOP",
-    "JG": "JUNGLE",
-    "MID": "MIDDLE",
-    "BOT": "BOTTOM",
-    "SUP": "UTILITY"
+    TOP: "TOP",
+    JG: "JUNGLE",
+    MID: "MIDDLE",
+    BOT: "BOTTOM",
+    SUP: "UTILITY",
   };
 
   // Riot APIでロールのプレイ回数集計Map
   var position = {
-    "TOP": 0,
-    "JUNGLE": 0,
-    "MIDDLE": 0,
-    "BOTTOM": 0,
-    "UTILITY": 0
+    TOP: 0,
+    JUNGLE: 0,
+    MIDDLE: 0,
+    BOTTOM: 0,
+    UTILITY: 0,
   };
 
   // Riot APIでチャンピオンプール集計用Set
@@ -33,8 +32,7 @@ function onFormSubmit(e) {
   // OPGG URL
   const opggUrl = sheet.getRange(lastRow, 8).getValue();
   // OPGG URLのクレンジング
-  let cleanedUrl = opggUrl
-    .replace(/\/(champions|mastery|ingame)$/, "");
+  let cleanedUrl = opggUrl.replace(/\/(champions|mastery|ingame)$/, "");
   sheet.getRange(lastRow, 8).setFormula(`=HYPERLINK("${cleanedUrl}", "${cleanedUrl}")`);
 
   let encodedSummonerNI = cleanedUrl.split("/").pop();
@@ -189,6 +187,9 @@ class RiotAPI {
      * @type {RankInfo[] | undefined}
      */
     const ranks = this.get(`https://jp1.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`);
+    if (ranks === undefined) {
+      return;
+    }
     return {
       solo: ranks.find((e) => e.queueType === "RANKED_SOLO_5x5"),
       flex: ranks.find((e) => e.queueType === "RANKED_FLEX_SR"),
