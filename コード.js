@@ -114,8 +114,6 @@ function onFormSubmit(e) {
 }
 
 class RiotAPI {
-  token;
-
   constructor(token) {
     this.token = token;
   }
