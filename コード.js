@@ -135,7 +135,7 @@ class RiotAPI {
       },
       muteHttpExceptions: true,
     });
-    if (res.getResponseCode !== 200) {
+    if (res.getResponseCode() !== 200) {
       return;
     }
     return JSON.parse(res.getContentText());
