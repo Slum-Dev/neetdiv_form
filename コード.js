@@ -1,21 +1,20 @@
 function onFormSubmit(e) {
-
   // フォームでのロールとRiot APIのロール表記互換Map
   const roleMap = {
-    "TOP": "TOP",
-    "JG": "JUNGLE",
-    "MID": "MIDDLE",
-    "BOT": "BOTTOM",
-    "SUP": "UTILITY"
+    TOP: "TOP",
+    JG: "JUNGLE",
+    MID: "MIDDLE",
+    BOT: "BOTTOM",
+    SUP: "UTILITY",
   };
 
   // Riot APIでロールのプレイ回数集計Map
   var position = {
-    "TOP": 0,
-    "JUNGLE": 0,
-    "MIDDLE": 0,
-    "BOTTOM": 0,
-    "UTILITY": 0
+    TOP: 0,
+    JUNGLE: 0,
+    MIDDLE: 0,
+    BOTTOM: 0,
+    UTILITY: 0,
   };
 
   // Riot APIでチャンピオンプール集計用Set
@@ -33,8 +32,7 @@ function onFormSubmit(e) {
   // OPGG URL
   const opggUrl = sheet.getRange(lastRow, 8).getValue();
   // OPGG URLのクレンジング
-  let cleanedUrl = opggUrl
-    .replace(/\/(champions|mastery|ingame)$/, "");
+  let cleanedUrl = opggUrl.replace(/\/(champions|mastery|ingame)$/, "");
   sheet.getRange(lastRow, 8).setFormula(`=HYPERLINK("${cleanedUrl}", "${cleanedUrl}")`);
 
   let encodedSummonerNI = cleanedUrl.split("/").pop();
@@ -50,54 +48,33 @@ function onFormSubmit(e) {
 
   // Riot APIキー取得
   const apiKey = PropertiesService.getScriptProperties().getProperty("API_KEY");
+  const riot = new RiotAPI(apiKey);
 
   // プレイヤーのUUIDを取得
-  const puuidUrl = `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${summonerName}/${summonerId}?api_key=${apiKey}`;
-  var response = UrlFetchApp.fetch(puuidUrl);
-  var json = JSON.parse(response.getContentText());
-  const puuid = json["puuid"];
+  const puuid = riot.getAccountPuuid(summonerName, summonerId);
+  sheet.getRange(lastRow, 14).setValue(`${puuid}`);
 
   // プレイヤーのサモナーレベルを取得
-  const summonerUrl = `https://jp1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`
-  response = UrlFetchApp.fetch(summonerUrl);
-  json = JSON.parse(response.getContentText());
-  const summonerLevel = json["summonerLevel"]
+  const summonerLevel = riot.getSummonerLevel(puuid);
   sheet.getRange(lastRow, 11).setValue(summonerLevel);
 
   // サモナーレベルが30以上であれば追加でランクの情報を取得
   if (summonerLevel >= 30) {
-    const rankUrl = `https://jp1.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}?api_key=${apiKey}`
-    response = UrlFetchApp.fetch(rankUrl);
-    json = JSON.parse(response.getContentText());
-    if (json.length > 0) {
-      const soloRank = json.find(r => r["queueType"] === "RANKED_SOLO_5x5");
-      const flexRank = json.find(r => r["queueType"] === "RANKED_FLEX_SR");
-      if (soloRank) {
-        const tier = soloRank["tier"];
-        const rank = soloRank["rank"];
-        sheet.getRange(lastRow, 12).setValue(`${tier} ${rank}`);
-      } else {
-        sheet.getRange(lastRow, 12).setValue("アンランク/情報なし");
-      }
+    sheet.getRange(lastRow, 12).setValue("情報なし");
+    sheet.getRange(lastRow, 13).setValue("情報なし");
 
-      if (flexRank) {
-        const tier = json[0]["tier"]
-        const rank = json[0]["rank"]
-        sheet.getRange(lastRow, 13).setValue(`${tier} ${rank}`);
-      } else {
-        sheet.getRange(lastRow, 13).setValue("アンランク/情報なし");
+    const rank = riot.getRankInfo(puuid);
+    if (rank) {
+      sheet.getRange(lastRow, 12).setValue("アンランク");
+      sheet.getRange(lastRow, 13).setValue("アンランク");
+      if (rank.solo) {
+        sheet.getRange(lastRow, 12).setValue(`${rank.solo.tier} ${rank.solo.rank}`);
       }
-    } else {
-      sheet.getRange(lastRow, 12).setValue("アンランク/情報なし");
-      sheet.getRange(lastRow, 13).setValue("アンランク/情報なし");
+      if (rank.flex) {
+        sheet.getRange(lastRow, 13).setValue(`${rank.flex.tier} ${rank.flex.rank}`);
+      }
     }
-  } else {
-    sheet.getRange(lastRow, 12).setValue("アンランク");
-    sheet.getRange(lastRow, 13).setValue("アンランク");
   }
-  
-  // puuid
-  sheet.getRange(lastRow, 14).setValue(`${puuid}`);
 
   // Riot APIで宣言レーンのマッチ数とチャンピオンプール取得
   // const matchListUrl = `https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=20&api_key=${apiKey}`
@@ -132,4 +109,90 @@ function onFormSubmit(e) {
   // for (let i = 0; i < championArray.length; i++) {
   //   sheet.getRange(lastRow, 12 + i).setValue(championArray[i]);
   // }
+}
+
+class RiotAPI {
+  constructor(token) {
+    this.token = token;
+  }
+
+  /**
+   * Riot APIトークンを乗せてfetch
+   * 200ならJSON.parseして返す
+   * 200以外はundefinedを返す
+   * @template T
+   * @param {"get" | "delete" | "patch" | "post" | "put"} method
+   * @param {string} url
+   * @returns {T | undefined}
+   */
+  fetch(method, url) {
+    const res = UrlFetchApp.fetch(url, {
+      method,
+      headers: {
+        "X-Riot-Token": this.token,
+      },
+      muteHttpExceptions: true,
+    });
+    if (res.getResponseCode() !== 200) {
+      return;
+    }
+    return JSON.parse(res.getContentText());
+  }
+
+  get(url) {
+    return this.fetch("get", url);
+  }
+
+  /**
+   * @param {string} name 例：若干ワース
+   * @param {string} tagline 例：k4sen
+   * @returns {string | undefined}
+   */
+  getAccountPuuid(name, tagline) {
+    return this.get(
+      `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${name}/${tagline}`,
+    )?.puuid;
+  }
+
+  /**
+   * @param {string} puuid
+   * @returns {number | undefined}
+   */
+  getSummonerLevel(puuid) {
+    return this.get(`https://jp1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`)
+      ?.summonerLevel;
+  }
+
+  /**
+   * @typedef RankInfo
+   * @property {string} leagueId
+   * @property {"RANKED_FLEX_SR" | "RANKED_SOLO_5x5"} queueType
+   * @property {string} tier ランクの色 チャレとかアイアンとか
+   * @property {string} rank ランクの階層 I~IV
+   * @property {string} puuid
+   * @property {number} leaguePoints
+   * @property {number} wins
+   * @property {number} losses
+   * @property {boolean} veteran
+   * @property {boolean} inactive
+   * @property {boolean} freshBlood
+   * @property {boolean} hotStreak
+   */
+  /**
+   * @param {string} puuid
+   * @returns {{solo?: RankInfo, flex?: RankInfo} | undefined}
+   */
+  getRankInfo(puuid) {
+    /**
+     * @type {RankInfo[] | undefined}
+     */
+    const ranks = this.get(`https://jp1.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`);
+    if (ranks === undefined) {
+      return;
+    }
+    return {
+      solo: ranks.find((e) => e.queueType === "RANKED_SOLO_5x5"),
+      flex: ranks.find((e) => e.queueType === "RANKED_FLEX_SR"),
+    };
+  }
 }
