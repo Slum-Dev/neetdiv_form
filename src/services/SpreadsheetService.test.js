@@ -1,27 +1,27 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SpreadsheetService } from './SpreadsheetService.js';
 import { MockSpreadsheetService } from '../__mocks__/SpreadsheetService.js';
 
 // Google Sheetsのモックオブジェクト
 const createMockSheet = () => ({
-  getLastRow: jest.fn(),
-  getLastColumn: jest.fn(),
-  getRange: jest.fn(),
-  deleteRows: jest.fn(),
-  clear: jest.fn(),
-  insertRowsAfter: jest.fn()
+  getLastRow: vi.fn(),
+  getLastColumn: vi.fn(),
+  getRange: vi.fn(),
+  deleteRows: vi.fn(),
+  clear: vi.fn(),
+  insertRowsAfter: vi.fn()
 });
 
 const createMockRange = (value = '') => ({
-  getValue: jest.fn(() => value),
-  setValue: jest.fn(),
-  setFormula: jest.fn(),
-  getValues: jest.fn(() => [[value]]),
-  setValues: jest.fn(),
-  setBackground: jest.fn(),
-  setFontWeight: jest.fn(),
-  setFontStyle: jest.fn(),
-  setFontColor: jest.fn()
+  getValue: vi.fn(() => value),
+  setValue: vi.fn(),
+  setFormula: vi.fn(),
+  getValues: vi.fn(() => [[value]]),
+  setValues: vi.fn(),
+  setBackground: vi.fn(),
+  setFontWeight: vi.fn(),
+  setFontStyle: vi.fn(),
+  setFontColor: vi.fn()
 });
 
 describe('SpreadsheetService', () => {
@@ -105,7 +105,7 @@ describe('SpreadsheetService', () => {
         ['A2', 'B2', 'C2']
       ];
       const mockRange = {
-        getValues: jest.fn(() => mockValues)
+        getValues: vi.fn(() => mockValues)
       };
       mockSheet.getRange.mockReturnValue(mockRange);
 
@@ -119,7 +119,7 @@ describe('SpreadsheetService', () => {
   describe('setRangeValues', () => {
     it('範囲に値を一括設定', () => {
       const mockRange = {
-        setValues: jest.fn()
+        setValues: vi.fn()
       };
       mockSheet.getRange.mockReturnValue(mockRange);
       
@@ -144,7 +144,7 @@ describe('SpreadsheetService', () => {
     it('行全体の値を取得', () => {
       mockSheet.getLastColumn.mockReturnValue(5);
       const mockRange = {
-        getValues: jest.fn(() => [['A', 'B', 'C', 'D', 'E']])
+        getValues: vi.fn(() => [['A', 'B', 'C', 'D', 'E']])
       };
       mockSheet.getRange.mockReturnValue(mockRange);
 
@@ -158,7 +158,7 @@ describe('SpreadsheetService', () => {
   describe('setCellBackground', () => {
     it('セルの背景色を設定', () => {
       const mockRange = {
-        setBackground: jest.fn()
+        setBackground: vi.fn()
       };
       mockSheet.getRange.mockReturnValue(mockRange);
 
@@ -172,9 +172,9 @@ describe('SpreadsheetService', () => {
   describe('setCellFontStyle', () => {
     it('フォントスタイルを全て設定', () => {
       const mockRange = {
-        setFontWeight: jest.fn(),
-        setFontStyle: jest.fn(),
-        setFontColor: jest.fn()
+        setFontWeight: vi.fn(),
+        setFontStyle: vi.fn(),
+        setFontColor: vi.fn()
       };
       mockSheet.getRange.mockReturnValue(mockRange);
 
@@ -191,9 +191,9 @@ describe('SpreadsheetService', () => {
 
     it('部分的なスタイル設定', () => {
       const mockRange = {
-        setFontWeight: jest.fn(),
-        setFontStyle: jest.fn(),
-        setFontColor: jest.fn()
+        setFontWeight: vi.fn(),
+        setFontStyle: vi.fn(),
+        setFontColor: vi.fn()
       };
       mockSheet.getRange.mockReturnValue(mockRange);
 

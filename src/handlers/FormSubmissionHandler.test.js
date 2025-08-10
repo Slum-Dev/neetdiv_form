@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FormSubmissionHandler } from './FormSubmissionHandler.js';
 import { MockRiotAPIService } from '../__mocks__/RiotAPIService.js';
 import { MockSpreadsheetService } from '../__mocks__/SpreadsheetService.js';

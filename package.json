@@ -4,34 +4,13 @@
   "description": "League of Legends summoner information management system for Google Apps Script",
   "type": "module",
   "scripts": {
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:verbose": "jest --verbose"
-  },
-  "devDependencies": {
-    "jest": "^29.7.0",
-    "@jest/globals": "^29.7.0"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "transform": {},
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
-    },
-    "testMatch": [
-      "**/*.test.js"
-    ],
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/**/*.test.js"
-    ],
-    "coverageDirectory": "coverage",
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "html"
-    ]
+    "build": "esbuild src/main.js --bundle --outfile=dist/Code.gs --format=iife --platform=browser --target=es2015 --global-name=GASApp",
+    "build:watch": "npm run build -- --watch",
+    "build:dev": "npm run build -- --sourcemap",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui"
   },
   "keywords": [
     "google-apps-script",
@@ -40,5 +19,9 @@
     "spreadsheet"
   ],
   "author": "Community",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.8",
+    "vitest": "^3.2.4"
+  }
 }

@@ -1,16 +1,16 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getApiKey } from './gasHelpers.js';
 
 // Google Apps Script APIのモック
 global.PropertiesService = {
-  getScriptProperties: jest.fn(() => ({
-    getProperty: jest.fn()
+  getScriptProperties: vi.fn(() => ({
+    getProperty: vi.fn()
   }))
 };
 
 describe('gasHelpers', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getApiKey', () => {
@@ -18,7 +18,7 @@ describe('gasHelpers', () => {
       // Arrange
       const mockApiKey = 'test-api-key-123';
       const mockPropertiesService = {
-        getProperty: jest.fn(() => mockApiKey)
+        getProperty: vi.fn(() => mockApiKey)
       };
       global.PropertiesService.getScriptProperties.mockReturnValue(mockPropertiesService);
 
@@ -34,7 +34,7 @@ describe('gasHelpers', () => {
     it('APIキーが設定されていない場合エラー', () => {
       // Arrange
       const mockPropertiesService = {
-        getProperty: jest.fn(() => null)
+        getProperty: vi.fn(() => null)
       };
       global.PropertiesService.getScriptProperties.mockReturnValue(mockPropertiesService);
 
@@ -45,7 +45,7 @@ describe('gasHelpers', () => {
     it('空文字のAPIキーの場合エラー', () => {
       // Arrange
       const mockPropertiesService = {
-        getProperty: jest.fn(() => '')
+        getProperty: vi.fn(() => '')
       };
       global.PropertiesService.getScriptProperties.mockReturnValue(mockPropertiesService);
 

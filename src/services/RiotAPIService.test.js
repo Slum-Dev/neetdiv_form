@@ -1,10 +1,10 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RiotAPIService } from './RiotAPIService.js';
 import { MockRiotAPIService } from '../__mocks__/RiotAPIService.js';
 
 // UrlFetchAppのモック
 global.UrlFetchApp = {
-  fetch: jest.fn()
+  fetch: vi.fn()
 };
 
 describe('RiotAPIService', () => {
@@ -13,7 +13,7 @@ describe('RiotAPIService', () => {
 
   beforeEach(() => {
     service = new RiotAPIService(mockApiKey);
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('fetch', () => {
