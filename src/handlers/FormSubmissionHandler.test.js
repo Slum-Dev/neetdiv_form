@@ -112,7 +112,6 @@ describe('FormSubmissionHandler', () => {
         summonerName: 'TestPlayer',
         tagLine: 'JP1'
       });
-      expect(mockSpreadsheet.getCellValue(10, 10)).toBe('TestPlayer#JP1');
     });
 
     it('無効なURLの場合エラーを設定してnullを返す', () => {
@@ -167,6 +166,7 @@ describe('FormSubmissionHandler', () => {
           flex: null
         }
       });
+      expect(mockSpreadsheet.getCellValue(10, 10)).toBe('Test#JP1');
     });
 
     it('PUUIDが取得できない場合はnullを返す', async () => {
