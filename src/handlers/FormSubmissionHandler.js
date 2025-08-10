@@ -109,39 +109,36 @@ export class FormSubmissionHandler {
    * @private
    */
   async fetchGameData(summonerInfo, row) {
-    // PUUIDを取得
-    const puuid = await this.riotAPI.getAccountPuuid(
-      summonerInfo.summonerName, 
-      summonerInfo.tagLine
-    );
-    
-    if (!puuid) {
-      this.spreadsheet.setCellValue(
-        row, 
-        COLUMN_INDEXES.PUUID,
-        'Err: Riotアカウントの問い合わせに失敗しました。OPGG URLが正しいか確認してください。'
+    let puuid;
+    try {
+      puuid = await this.riotAPI.getAccountPuuid(
+        summonerInfo.summonerName, 
+        summonerInfo.tagLine
       );
+      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, puuid);
+    } catch (e) {
+      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, e.message);
       return null;
     }
     
-    // PUUIDをシートに記録
-    this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, puuid);
-    
-    // サモナーレベルを取得
-    const summonerLevel = await this.riotAPI.getSummonerLevel(puuid);
-    if (summonerLevel === undefined) {
-      this.spreadsheet.setCellValue(
-        row,
-        COLUMN_INDEXES.LEVEL,
-        'Err: サモナーレベルの取得に失敗しました。'
-      );
+    let summonerLevel;
+    try {
+      summonerLevel = await this.riotAPI.getSummonerLevel(puuid);
+      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, summonerLevel);
+    } catch (e) {
+      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, e.message);
       return null;
     }
     
     // ランク情報を取得（レベル30以上の場合）
     let rankInfo = null;
     if (summonerLevel >= 30) {
-      rankInfo = await this.riotAPI.getRankInfo(puuid);
+      try {
+        rankInfo = await this.riotAPI.getRankInfo(puuid);
+      } catch (e) {
+        // ランク情報取得エラーは後で処理
+        rankInfo = { error: e.message };
+      }
     }
     
     return {
@@ -165,7 +162,7 @@ export class FormSubmissionHandler {
       this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, "情報なし");
       this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, "情報なし");
       
-      if (gameData.rankInfo) {
+      if (gameData.rankInfo && !gameData.rankInfo.error) {
         // ソロランク
         const soloRankText = gameData.rankInfo.solo 
           ? `${gameData.rankInfo.solo.tier} ${gameData.rankInfo.solo.rank}`
@@ -177,10 +174,14 @@ export class FormSubmissionHandler {
           ? `${gameData.rankInfo.flex.tier} ${gameData.rankInfo.flex.rank}`
           : "アンランク";
         this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, flexRankText);
-      } else {
+      } else if (gameData.rankInfo && gameData.rankInfo.error) {
         // API呼び出しに失敗した場合
-        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, 'Err: ランクの取得に失敗しました。');
-        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, 'Err: ランクの取得に失敗しました。');
+        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, gameData.rankInfo.error);
+        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, gameData.rankInfo.error);
+      } else {
+        // rankInfoがnullの場合（レベル30未満）
+        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, '');
+        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, '');
       }
     }
   }

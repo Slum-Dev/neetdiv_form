@@ -46,8 +46,8 @@ describe('FormSubmissionHandler', () => {
       mockSpreadsheet.lastRow = 10;
       mockSpreadsheet.setCellValue(10, 8, 'https://www.op.gg/summoners/jp/InvalidPlayer-JP1');
       
-      // MockRiotAPIServiceのgetAccountPuuidをundefinedを返すように設定
-      mockRiotAPI.getAccountPuuid = async () => undefined;
+      // MockRiotAPIServiceが例外をthrowするように設定
+      mockRiotAPI.responses = { throwError: true };
 
       // Act
       await handler.handle({});
@@ -171,7 +171,7 @@ describe('FormSubmissionHandler', () => {
 
     it('PUUIDが取得できない場合はnullを返す', async () => {
       // Arrange
-      mockRiotAPI.getAccountPuuid = async () => undefined;
+      mockRiotAPI.responses = { throwError: true };
 
       // Act
       const result = await handler.fetchGameData(
@@ -186,8 +186,11 @@ describe('FormSubmissionHandler', () => {
 
     it('サモナーレベルが取得できない場合はnullを返す', async () => {
       // Arrange
-      mockRiotAPI.getAccountPuuid = async () => 'test-puuid';
-      mockRiotAPI.getSummonerLevel = async () => undefined;
+      mockRiotAPI.responses = {
+        puuid: 'test-puuid',
+        throwError: true,
+        summonerLevel: undefined  // getSummonerLevelで例外をthrowさせる
+      };
 
       // Act
       const result = await handler.fetchGameData(
@@ -244,7 +247,7 @@ describe('FormSubmissionHandler', () => {
       const gameData = {
         puuid: 'test-puuid',
         summonerLevel: 100,
-        rankInfo: null
+        rankInfo: { error: 'Err: ランクの取得に失敗しました。' }
       };
 
       // Act

@@ -40,32 +40,26 @@ describe('RiotAPIService', () => {
       );
     });
 
-    it('200以外のレスポンスの場合undefinedを返す', async () => {
+    it('200以外のレスポンスの場合例外をthrowする', async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => 'Not Found'
+        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
-      // Act
-      const result = await service.fetch('get', 'https://api.test.com');
-
-      // Assert
-      expect(result).toBeUndefined();
+      // Act & Assert
+      await expect(service.fetch('get', 'https://api.test.com')).rejects.toThrow();
     });
 
-    it('エラーが発生した場合undefinedを返す', async () => {
+    it('ネットワークエラーの場合例外をthrowする', async () => {
       // Arrange
       global.UrlFetchApp.fetch.mockImplementation(() => {
         throw new Error('Network error');
       });
 
-      // Act
-      const result = await service.fetch('get', 'https://api.test.com');
-
-      // Assert
-      expect(result).toBeUndefined();
+      // Act & Assert
+      await expect(service.fetch('get', 'https://api.test.com')).rejects.toThrow('Network error');
     });
   });
 
@@ -111,19 +105,16 @@ describe('RiotAPIService', () => {
       );
     });
 
-    it('アカウントが見つからない場合undefinedを返す', async () => {
+    it('アカウントが見つからない場合RiotAPIExceptionをthrowする', async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => 'Not Found'
+        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
-      // Act
-      const result = await service.getAccountPuuid('Invalid', 'JP1');
-
-      // Assert
-      expect(result).toBeUndefined();
+      // Act & Assert
+      await expect(service.getAccountPuuid('Invalid', 'JP1')).rejects.toThrow('Riotアカウントの問い合わせに失敗しました');
     });
   });
 
@@ -151,19 +142,16 @@ describe('RiotAPIService', () => {
       );
     });
 
-    it('サモナーが見つからない場合undefinedを返す', async () => {
+    it('サモナーが見つからない場合RiotAPIExceptionをthrowする', async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => 'Not Found'
+        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
-      // Act
-      const result = await service.getSummonerLevel('invalid-puuid');
-
-      // Assert
-      expect(result).toBeUndefined();
+      // Act & Assert
+      await expect(service.getSummonerLevel('invalid-puuid')).rejects.toThrow('サモナーレベルの取得に失敗しました');
     });
   });
 
@@ -237,19 +225,16 @@ describe('RiotAPIService', () => {
       expect(result.flex).toBeUndefined();
     });
 
-    it('エラーの場合undefinedを返す', async () => {
+    it('エラーの場合RiotAPIExceptionをthrowする', async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => 'Not Found'
+        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
-      // Act
-      const result = await service.getRankInfo('invalid-puuid');
-
-      // Assert
-      expect(result).toBeUndefined();
+      // Act & Assert
+      await expect(service.getRankInfo('invalid-puuid')).rejects.toThrow('ランクの取得に失敗しました');
     });
   });
 
