@@ -31,5 +31,5 @@ function onFormSubmit(e) {
 }
 
 
-// Google Apps Script用にグローバル関数としてエクスポート
-globalThis.onFormSubmit = onFormSubmit;
+// GASApp向けにexport（esbuildのIIFEで利用される）
+export { onFormSubmit };
