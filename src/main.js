@@ -32,6 +32,4 @@ function onFormSubmit(e) {
 
 
 // Google Apps Script用にグローバル関数としてエクスポート
-if (typeof global !== 'undefined') {
-  global.onFormSubmit = onFormSubmit;
-}
+globalThis.onFormSubmit = onFormSubmit;
