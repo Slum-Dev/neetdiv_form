@@ -1,0 +1,44 @@
+{
+  "name": "neetdiv_form",
+  "version": "1.0.0",
+  "description": "League of Legends summoner information management system for Google Apps Script",
+  "type": "module",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/**/*.test.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  },
+  "keywords": [
+    "google-apps-script",
+    "riot-api",
+    "league-of-legends",
+    "spreadsheet"
+  ],
+  "author": "Community",
+  "license": "MIT"
+}
