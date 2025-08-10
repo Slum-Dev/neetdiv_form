@@ -1,4 +1,4 @@
-import { parseOpggUrl } from '../utils/urlParser.js';
+import { buildOpggUrl, formatSummonerDisplayName, parseOpggUrl } from '../utils/urlParser.js';
 import { mapFormRoleToAPI } from '../utils/roleMapper.js';
 import { COLUMN_INDEXES } from '../config/constants.js';
 
@@ -83,17 +83,7 @@ export class FormSubmissionHandler {
   processSummonerInfo(opggUrl, row) {
     try {
       // URLを解析
-      const { summonerName, tagLine, cleanedUrl } = parseOpggUrl(opggUrl);
-      
-      // クレンジングしたURLをハイパーリンクとして設定
-      this.spreadsheet.setHyperlink(row, COLUMN_INDEXES.OPGG_URL, cleanedUrl);
-      
-      // コピペ用のサモナー名を設定
-      const displayName = `${summonerName}#${tagLine}`;
-      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SUMMONER_NAME, displayName);
-      
-      return { summonerName, tagLine };
-      
+      return parseOpggUrl(opggUrl);
     } catch (error) {
       this.spreadsheet.setCellValue(
         row, 
@@ -115,7 +105,18 @@ export class FormSubmissionHandler {
         summonerInfo.summonerName, 
         summonerInfo.tagLine
       );
+
+      // アカウントの存在が確認できたので
+      // PUUIDを設定
       this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, puuid);
+
+      // クレンジングしたURLをハイパーリンクとして設定
+      const cleanedUrl = buildOpggUrl(summonerInfo.summonerName, summonerInfo.tagLine);
+      this.spreadsheet.setHyperlink(row, COLUMN_INDEXES.OPGG_URL, cleanedUrl);
+
+      // コピペ用のサモナー名を設定
+      const displayName = formatSummonerDisplayName(summonerInfo.summonerName, summonerInfo.tagLine)
+      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SUMMONER_NAME, displayName);
     } catch (e) {
       this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, e.message);
       return null;
