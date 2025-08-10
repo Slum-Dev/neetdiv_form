@@ -7,6 +7,7 @@ build/
 dist/
 temp/
 *.log
+node_modules/
 
 # Sensitive information (e.g., API keys, credentials)
 secrets.json
