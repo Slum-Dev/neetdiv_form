@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { FormSubmissionHandler } from './FormSubmissionHandler.js';
-import { MockRiotAPIService } from '../services/RiotAPIService.js';
-import { MockSpreadsheetService } from '../services/SpreadsheetService.js';
+import { MockRiotAPIService } from '../__mocks__/RiotAPIService.js';
+import { MockSpreadsheetService } from '../__mocks__/SpreadsheetService.js';
 
 describe('FormSubmissionHandler', () => {
   let handler;

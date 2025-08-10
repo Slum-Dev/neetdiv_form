@@ -1,5 +1,6 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { SpreadsheetService, MockSpreadsheetService } from './SpreadsheetService.js';
+import { SpreadsheetService } from './SpreadsheetService.js';
+import { MockSpreadsheetService } from '../__mocks__/SpreadsheetService.js';
 
 // Google Sheetsのモックオブジェクト
 const createMockSheet = () => ({

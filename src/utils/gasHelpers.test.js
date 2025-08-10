@@ -1,5 +1,5 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { getApiKey } from './main.js';
+import { getApiKey } from './gasHelpers.js';
 
 // Google Apps Script APIのモック
 global.PropertiesService = {
@@ -8,7 +8,7 @@ global.PropertiesService = {
   }))
 };
 
-describe('main', () => {
+describe('gasHelpers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -54,11 +54,4 @@ describe('main', () => {
     });
   });
 
-  // onFormSubmitは複雑な依存関係があるため、統合テストで検証
-  describe('onFormSubmit関数の存在確認', () => {
-    it('onFormSubmit関数が存在する', async () => {
-      const { onFormSubmit } = await import('./main.js');
-      expect(typeof onFormSubmit).toBe('function');
-    });
-  });
 });

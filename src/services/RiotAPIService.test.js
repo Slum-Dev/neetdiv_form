@@ -1,5 +1,6 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { RiotAPIService, MockRiotAPIService } from './RiotAPIService.js';
+import { RiotAPIService } from './RiotAPIService.js';
+import { MockRiotAPIService } from '../__mocks__/RiotAPIService.js';
 
 // UrlFetchAppのモック
 global.UrlFetchApp = {

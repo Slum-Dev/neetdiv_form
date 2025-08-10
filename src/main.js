@@ -2,6 +2,7 @@ import { FormSubmissionHandler } from './handlers/FormSubmissionHandler.js';
 import { RiotAPIService } from './services/RiotAPIService.js';
 import { SpreadsheetService } from './services/SpreadsheetService.js';
 import { SHEET_NAME } from './config/constants.js';
+import { getApiKey } from './utils/gasHelpers.js';
 
 /**
  * Google Apps Scriptのトリガー関数
@@ -29,24 +30,8 @@ function onFormSubmit(e) {
   }
 }
 
-/**
- * Riot APIキーを取得
- * @private
- * @returns {string} APIキー
- * @throws {Error} APIキーが設定されていない場合
- */
-function getApiKey() {
-  const apiKey = PropertiesService.getScriptProperties().getProperty("API_KEY");
-  if (!apiKey) {
-    throw new Error('API_KEYが設定されていません。スクリプトプロパティを確認してください。');
-  }
-  return apiKey;
-}
 
 // Google Apps Script用にグローバル関数としてエクスポート
 if (typeof global !== 'undefined') {
   global.onFormSubmit = onFormSubmit;
 }
-
-// ES6モジュールとしてもエクスポート（テスト用）
-export { onFormSubmit, getApiKey };

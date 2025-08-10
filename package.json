@@ -4,7 +4,7 @@
   "description": "League of Legends summoner information management system for Google Apps Script",
   "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:verbose": "jest --verbose"
