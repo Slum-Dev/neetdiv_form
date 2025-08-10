@@ -31,5 +31,4 @@ function onFormSubmit(e) {
 }
 
 
-// GASApp向けにexport（esbuildのIIFEで利用される）
-export { onFormSubmit };
+globalThis.onFormSubmit = onFormSubmit;

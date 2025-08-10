@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "esbuild src/main.js --bundle --outfile=dist/Code.gs --format=iife --platform=browser --target=es2015 --global-name=GASApp --banner:js=\"/* Google Apps Script Global Functions */\" --footer:js=\"// Google Apps Script トリガー用グローバル関数\nfunction onFormSubmit(e) { return GASApp.onFormSubmit(e); }\"",
+    "build": "esbuild src/main.js --bundle --outfile=dist/Code.gs --format=esm --platform=browser --target=es2020",
     "build:watch": "npm run build -- --watch",
     "build:dev": "npm run build -- --sourcemap",
     "test": "vitest run",
