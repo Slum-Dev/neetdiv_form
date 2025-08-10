@@ -149,7 +149,7 @@ class RiotAPI {
     });
 
     const responseCode = res.getResponseCode();
-    const responseBody = res.JSON.parse(res.getContentText());
+    const responseBody = JSON.parse(res.getContentText());
     if (responseCode !== 200) {
       throw new Error(responseCode, {cause: responseBody});
     }
