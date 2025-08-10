@@ -51,40 +51,41 @@ function onFormSubmit(e) {
   const riot = new RiotAPI(apiKey);
 
   // プレイヤーのUUIDを取得
-  const puuid = riot.getAccountPuuid(summonerName, summonerId);
-  if(!puuid) {
-    sheet.getRange(lastRow, 14).setValue('Err: Riotアカウントの問い合わせに失敗しました。OPGG URLが正しいか確認してください。');
-    return;
+  let puuid;
+  try {
+    puuid = riot.getAccountPuuid(summonerName, summonerId);
+    sheet.getRange(lastRow, 14).setValue(`${puuid}`);
+  } catch (e) {
+    sheet.getRange(lastRow, 14).setValue(e.message);
   }
-  sheet.getRange(lastRow, 14).setValue(`${puuid}`);
 
   // プレイヤーのサモナーレベルを取得
-  const summonerLevel = riot.getSummonerLevel(puuid);
-  if(!summonerLevel) {
-    sheet.getRange(lastRow, 11).setValue('Err: サモナーレベルの取得に失敗しました。');
-    return;
+  let summonerLevel;
+  try {
+    summonerLevel = riot.getSummonerLevel(puuid);
+    sheet.getRange(lastRow, 11).setValue(summonerLevel);
+  } catch (e) {
+    sheet.getRange(lastRow, 11).setValue(e.message);
   }
-  sheet.getRange(lastRow, 11).setValue(summonerLevel);
 
   // サモナーレベルが30以上であれば追加でランクの情報を取得
   if (summonerLevel >= 30) {
     sheet.getRange(lastRow, 12).setValue("情報なし");
     sheet.getRange(lastRow, 13).setValue("情報なし");
 
-    const rank = riot.getRankInfo(puuid);
-    if(!rank) {
-      sheet.getRange(lastRow, 12).setValue('Err: ランクの取得に失敗しました。');
-      sheet.getRange(lastRow, 13).setValue('Err: ランクの取得に失敗しました。');
-      return;
-    }
-
-    sheet.getRange(lastRow, 12).setValue("アンランク");
-    sheet.getRange(lastRow, 13).setValue("アンランク");
-    if (rank.solo) {
-      sheet.getRange(lastRow, 12).setValue(`${rank.solo.tier} ${rank.solo.rank}`);
-    }
-    if (rank.flex) {
-      sheet.getRange(lastRow, 13).setValue(`${rank.flex.tier} ${rank.flex.rank}`);
+    try {
+      const rank = riot.getRankInfo(puuid);
+      sheet.getRange(lastRow, 12).setValue("アンランク");
+      sheet.getRange(lastRow, 13).setValue("アンランク");
+      if (rank.solo) {
+        sheet.getRange(lastRow, 12).setValue(`${rank.solo.tier} ${rank.solo.rank}`);
+      }
+      if (rank.flex) {
+        sheet.getRange(lastRow, 13).setValue(`${rank.flex.tier} ${rank.flex.rank}`);
+      }
+    } catch (e) {
+      sheet.getRange(lastRow, 12).setValue(e.message);
+      sheet.getRange(lastRow, 13).setValue(e.message);
     }
   }
 
@@ -131,10 +132,11 @@ class RiotAPI {
   /**
    * Riot APIトークンを乗せてfetch
    * 200ならJSON.parseして返す
-   * 200以外はundefinedを返す
+   * 200以外は例外をthrowする
    * @template T
    * @param {"get" | "delete" | "patch" | "post" | "put"} method
    * @param {string} url
+   * @throws {Error} (Response_Code, {cause: Riot_API_Response_JSON_Object})
    * @returns {T | undefined}
    */
   fetch(method, url) {
@@ -145,34 +147,52 @@ class RiotAPI {
       },
       muteHttpExceptions: true,
     });
-    if (res.getResponseCode() !== 200) {
-      return;
+
+    const responseCode = res.getResponseCode();
+    const responseBody = res.JSON.parse(res.getContentText());
+    if (responseCode !== 200) {
+      throw new Error(responseCode, {cause: responseBody});
     }
-    return JSON.parse(res.getContentText());
+    return responseBody;
   }
 
   get(url) {
-    return this.fetch("get", url);
+    try {
+      return this.fetch("get", url);
+    } catch (e) {
+      throw e;
+    }
   }
 
   /**
    * @param {string} name 例：若干ワース
    * @param {string} tagline 例：k4sen
+   * @throws {RiotAPIException}
    * @returns {string | undefined}
    */
   getAccountPuuid(name, tagline) {
-    return this.get(
-      `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${name}/${tagline}`,
-    )?.puuid;
+    try {
+      return this.get(
+        `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${name}/${tagline}`,
+      )?.puuid;
+    } catch (e) {
+      throw new RiotAPIException('Riotアカウントの問い合わせに失敗しました。', e.cause);
+    }
   }
 
   /**
    * @param {string} puuid
+   * @throws {RiotAPIException}
    * @returns {number | undefined}
    */
   getSummonerLevel(puuid) {
-    return this.get(`https://jp1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`)
-      ?.summonerLevel;
+    try {
+      return this.get(
+        `https://jp1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`
+      )?.summonerLevel;
+    } catch (e) {
+      throw new RiotAPIException('サモナーレベルの取得に失敗しました。', e.cause);
+    }
   }
 
   /**
@@ -192,19 +212,30 @@ class RiotAPI {
    */
   /**
    * @param {string} puuid
+   * @throws {RiotAPIException}
    * @returns {{solo?: RankInfo, flex?: RankInfo} | undefined}
    */
   getRankInfo(puuid) {
     /**
      * @type {RankInfo[] | undefined}
      */
-    const ranks = this.get(`https://jp1.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`);
-    if (ranks === undefined) {
-      return;
+    let ranks;
+    try {
+      ranks = this.get(
+        `https://jp1.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`
+      );
+      return {
+        solo: ranks.find((e) => e.queueType === "RANKED_SOLO_5x5"),
+        flex: ranks.find((e) => e.queueType === "RANKED_FLEX_SR"),
+      };
+    } catch (e) {
+      throw new RiotAPIException('サモナーレベルの取得に失敗しました。', e.cause);
     }
-    return {
-      solo: ranks.find((e) => e.queueType === "RANKED_SOLO_5x5"),
-      flex: ranks.find((e) => e.queueType === "RANKED_FLEX_SR"),
-    };
+  }
+}
+
+class RiotAPIException extends Error {
+  constructor(message, apiResponse) {
+    super(`Err: ${message}${apiResponse.message} (${apiResponse.status_code})`);
   }
 }
