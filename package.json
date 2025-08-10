@@ -1,0 +1,22 @@
+{
+  "name": "neetdiv_form",
+  "version": "1.0.0",
+  "description": "League of Legends summoner information management system for Google Apps Script",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --outfile=dist/Code.gs --format=esm --platform=browser --target=es2020",
+    "build:watch": "npm run build -- --watch",
+    "build:dev": "npm run build -- --sourcemap",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui"
+  },
+  "author": "Community",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.8",
+    "vitest": "^3.2.4"
+  }
+}

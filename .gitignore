@@ -1,3 +1,6 @@
+# Dependencies
+node_modules/
+
 # IDE/Editor specific files
 .DS_Store
 .vscode/
