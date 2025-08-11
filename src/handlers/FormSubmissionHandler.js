@@ -83,7 +83,11 @@ export class FormSubmissionHandler {
   processSummonerInfo(opggUrl, row) {
     try {
       // URLを解析
-      return parseOpggUrl(opggUrl);
+      const parsedUrl = parseOpggUrl(opggUrl);
+      if(!parsedUrl) {
+        throw new Error("OPGG URLの解析に失敗しました。");
+      }
+      return parsedUrl;
     } catch (error) {
       this.spreadsheet.setCellValue(
         row, 

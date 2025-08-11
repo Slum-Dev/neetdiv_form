@@ -34,11 +34,12 @@ describe('FormSubmissionHandler', () => {
       await handler.handle({});
 
       // Assert
+      expect(mockSpreadsheet.getCellValue(10, 8)).toBe('https://www.op.gg/summoners/jp/TestPlayer-JP1');
       expect(mockSpreadsheet.getCellValue(10, 10)).toBe('TestPlayer#JP1');
-      expect(mockSpreadsheet.getCellValue(10, 14)).toBe('test-puuid-123');
       expect(mockSpreadsheet.getCellValue(10, 11)).toBe(150);
       expect(mockSpreadsheet.getCellValue(10, 12)).toBe('GOLD III');
       expect(mockSpreadsheet.getCellValue(10, 13)).toBe('SILVER I');
+      expect(mockSpreadsheet.getCellValue(10, 14)).toBe('test-puuid-123');
     });
 
     it('存在しないサモナーの場合エラーメッセージを設定', async () => {
@@ -110,7 +111,9 @@ describe('FormSubmissionHandler', () => {
       // Assert
       expect(result).toEqual({
         summonerName: 'TestPlayer',
-        tagLine: 'JP1'
+        tagLine: 'JP1',
+        region: "jp",
+        cleanedUrl: "https://www.op.gg/summoners/jp/TestPlayer-JP1"
       });
     });
 
