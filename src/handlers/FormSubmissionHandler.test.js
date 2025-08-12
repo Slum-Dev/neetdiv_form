@@ -34,7 +34,7 @@ describe('FormSubmissionHandler', () => {
       await handler.handle({});
 
       // Assert
-      expect(mockSpreadsheet.getCellValue(10, 8)).toBe('https://www.op.gg/summoners/jp/TestPlayer-JP1');
+      expect(mockSpreadsheet.formulas['10,8']).toBe('=HYPERLINK("https://op.gg/summoners/jp/TestPlayer-JP1", "https://op.gg/summoners/jp/TestPlayer-JP1")');
       expect(mockSpreadsheet.getCellValue(10, 10)).toBe('TestPlayer#JP1');
       expect(mockSpreadsheet.getCellValue(10, 11)).toBe(150);
       expect(mockSpreadsheet.getCellValue(10, 12)).toBe('GOLD III');
@@ -113,7 +113,7 @@ describe('FormSubmissionHandler', () => {
         summonerName: 'TestPlayer',
         tagLine: 'JP1',
         region: "jp",
-        cleanedUrl: "https://www.op.gg/summoners/jp/TestPlayer-JP1"
+        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1"
       });
     });
 

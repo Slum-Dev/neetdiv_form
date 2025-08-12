@@ -63,5 +63,5 @@ export function formatSummonerDisplayName(summonerName, tagLine) {
 export function buildOpggUrl(summonerName, tagLine, region = 'jp') {
   const encodedName = encodeURIComponent(summonerName);
   const encodedTag = encodeURIComponent(tagLine);
-  return `https://www.op.gg/summoners/${region}/${encodedName}-${encodedTag}`;
+  return `https://op.gg/summoners/${region}/${encodedName}-${encodedTag}`;
 }
