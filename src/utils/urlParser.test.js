@@ -76,6 +76,13 @@ describe('urlParser', () => {
       expect(result.cleanedUrl).toBe('https://op.gg/summoners/jp/TestPlayer-JP1');
     });
 
+    it('未知のパスを削除', () => {
+      const url = 'https://www.op.gg/summoners/jp/TestPlayer-JP1/xxxxxxx';
+      const result = parseOpggUrl(url);
+      
+      expect(result.cleanedUrl).toBe('https://op.gg/summoners/jp/TestPlayer-JP1');
+    });
+
     it('クエリパラメータを削除', () => {
       const url = 'https://www.op.gg/summoners/jp/TestPlayer-JP1?refresh=true';
       const result = parseOpggUrl(url);
@@ -88,7 +95,7 @@ describe('urlParser', () => {
       });
     });
 
-    it('ハッシュを削除', () => {
+    it('フラグメントを削除', () => {
       const url = 'https://www.op.gg/lol/summoners/jp/TestPlayer-JP1#hash';
       const result = parseOpggUrl(url);
       
@@ -149,11 +156,11 @@ describe('urlParser', () => {
     });
 
     it('特殊文字を含むサモナー名', () => {
-      const url = 'https://www.op.gg/summoners/jp/Test%20Player%23123-JP1';
+      const url = 'https://www.op.gg/summoners/jp/Test%20Player%23123-αβγ';
       const result = parseOpggUrl(url);
       
       expect(result.summonerName).toBe('Test Player#123');
-      expect(result.tagLine).toBe('JP1');
+      expect(result.tagLine).toBe('αβγ');
     });
 
     it('タグラインがない場合はデフォルトJP1', () => {
