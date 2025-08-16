@@ -3,7 +3,8 @@ node_modules/
 
 # IDE/Editor specific files
 .DS_Store
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 
 # Build artifacts and temporary files
 build/
