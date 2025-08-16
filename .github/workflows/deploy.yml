@@ -1,0 +1,49 @@
+name: CD (Build and deploy)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Clasp
+        run: npm install clasp -g
+
+      - name: Build
+        run: npm run build
+
+      - name: Copy appsscript.json
+        run: cp appsscript.json dist/
+
+      - name: Create .clasp.json
+        run: bash .github/scripts/setup_clasp.sh
+
+      - name: Create .clasprc.json
+        run: bash .github/scripts/setup_clasprc.sh
+
+      - name: Deploy
+        run: clasp push
