@@ -22,8 +22,8 @@ export class FormSubmissionHandler {
    */
   async handle(formEvent) {
     try {
-      const lastRow = this.spreadsheet.getLastRow();
-      
+      const lastRow = formEvent?.range?.getRow?.() || this.spreadsheet.getLastRow();
+
       // 1. フォームデータの取得と解析
       const formData = this.extractFormData(lastRow);
       
