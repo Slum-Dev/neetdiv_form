@@ -8,6 +8,7 @@
     "build": "esbuild src/main.js --bundle --outfile=dist/Code.gs --format=esm --platform=browser --target=es2020",
     "build:watch": "npm run build -- --watch",
     "build:dev": "npm run build -- --sourcemap",
+    "format": "prettier -w **/*.{json,md,yml} && biome check --write",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
@@ -16,7 +17,10 @@
   "author": "Community",
   "license": "MIT",
   "devDependencies": {
+    "@biomejs/biome": "^2.2.0",
     "esbuild": "^0.25.8",
+    "lefthook": "^1.12.3",
+    "prettier": "^3.6.2",
     "vitest": "^3.2.4"
   }
 }

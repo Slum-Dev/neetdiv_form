@@ -1,5 +1,7 @@
 {
-    "recommendations": [
-        "editorconfig.editorconfig"
-    ]
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "biomejs.biome",
+    "vitest.explorer"
+  ]
 }
