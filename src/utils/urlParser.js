@@ -18,7 +18,7 @@ export function parseOpggUrl(opggUrl) {
 
   // オリジンがop.ggかつ "/summoners/<region>/<name>-<tag?>" のようなパスを持つURL
   const urlRegex =
-    /^https?:\/\/(?:www\.)?op.gg\/(?:\w+\/)*summoners\/(?<region>\w+)\/(?<name>[^\s#/?\-]+)(?:-(?<tag>[^\s#/?]+))?/i;
+    /^https?:\/\/(?:www\.)?op.gg\/(?:\w+\/)*summoners\/(?<region>\w+)\/(?<name>[^\s#/?-]+)(?:-(?<tag>[^\s#/?]+))?/i;
   const match = urlRegex.exec(opggUrl);
   if (!match?.groups) {
     return;
@@ -60,7 +60,7 @@ export function formatSummonerDisplayName(summonerName, tagLine) {
  * @param {string} [region='jp'] - リージョン
  * @returns {string} OPGG URL
  */
-export function buildOpggUrl(summonerName, tagLine, region = 'jp') {
+export function buildOpggUrl(summonerName, tagLine, region = "jp") {
   const encodedName = encodeURIComponent(summonerName);
   const encodedTag = encodeURIComponent(tagLine);
   return `https://op.gg/summoners/${region}/${encodedName}-${encodedTag}`;

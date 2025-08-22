@@ -12,18 +12,18 @@ export const SHEET_NAME = "フォームの回答 1";
  */
 export const COLUMN_INDEXES = {
   // フォーム入力項目
-  ROLE: 7,               // 宣言レーン
-  OPGG_URL: 8,           // OPGG URL
-  
+  ROLE: 7, // 宣言レーン
+  OPGG_URL: 8, // OPGG URL
+
   // 自動生成項目
-  SUMMONER_NAME: 10,     // サモナー名#タグライン（コピペ用）
-  LEVEL: 11,             // サモナーレベル
-  SOLO_RANK: 12,         // ソロランク
-  FLEX_RANK: 13,         // フレックスランク
-  PUUID: 14,             // PUUID（サブ垢確認用）
-  
+  SUMMONER_NAME: 10, // サモナー名#タグライン（コピペ用）
+  LEVEL: 11, // サモナーレベル
+  SOLO_RANK: 12, // ソロランク
+  FLEX_RANK: 13, // フレックスランク
+  PUUID: 14, // PUUID（サブ垢確認用）
+
   // 将来の拡張用（マッチ履歴）
-  MATCH_COUNT: 15,       // 宣言レーンのマッチ数
+  MATCH_COUNT: 15, // 宣言レーンのマッチ数
   CHAMPION_POOL_START: 16, // チャンピオンプール開始列
 };
 
@@ -86,14 +86,17 @@ export const QUEUE_TYPES = {
  * エラーメッセージ
  */
 export const ERROR_MESSAGES = {
-  API_KEY_NOT_SET: "API_KEYが設定されていません。スクリプトプロパティを確認してください。",
+  API_KEY_NOT_SET:
+    "API_KEYが設定されていません。スクリプトプロパティを確認してください。",
   SHEET_NOT_FOUND: "指定されたシートが見つかりません。",
   INVALID_URL: "OPGG URLの形式が正しくありません。",
-  ACCOUNT_NOT_FOUND: "Riotアカウントの問い合わせに失敗しました。OPGG URLが正しいか確認してください。",
+  ACCOUNT_NOT_FOUND:
+    "Riotアカウントの問い合わせに失敗しました。OPGG URLが正しいか確認してください。",
   LEVEL_FETCH_FAILED: "サモナーレベルの取得に失敗しました。",
   RANK_FETCH_FAILED: "ランクの取得に失敗しました。",
   NETWORK_ERROR: "ネットワークエラーが発生しました。",
-  RATE_LIMIT_EXCEEDED: "APIレート制限に達しました。しばらく待ってから再試行してください。",
+  RATE_LIMIT_EXCEEDED:
+    "APIレート制限に達しました。しばらく待ってから再試行してください。",
 };
 
 /**

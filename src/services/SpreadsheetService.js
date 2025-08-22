@@ -7,7 +7,7 @@ export class SpreadsheetService {
    */
   constructor(sheet) {
     if (!sheet) {
-      throw new Error('Sheet object is required');
+      throw new Error("Sheet object is required");
     }
     this.sheet = sheet;
   }
@@ -74,7 +74,7 @@ export class SpreadsheetService {
   setRangeValues(row, column, values) {
     const numRows = values.length;
     const numColumns = values[0]?.length || 0;
-    
+
     if (numRows > 0 && numColumns > 0) {
       this.sheet.getRange(row, column, numRows, numColumns).setValues(values);
     }
@@ -111,12 +111,12 @@ export class SpreadsheetService {
    */
   setCellFontStyle(row, column, style) {
     const range = this.sheet.getRange(row, column);
-    
+
     if (style.bold !== undefined) {
-      range.setFontWeight(style.bold ? 'bold' : 'normal');
+      range.setFontWeight(style.bold ? "bold" : "normal");
     }
     if (style.italic !== undefined) {
-      range.setFontStyle(style.italic ? 'italic' : 'normal');
+      range.setFontStyle(style.italic ? "italic" : "normal");
     }
     if (style.color) {
       range.setFontColor(style.color);

@@ -16,7 +16,7 @@ export class MockSpreadsheetService {
 
   getCellValue(row, column) {
     const key = `${row},${column}`;
-    return this.data[key] || '';
+    return this.data[key] || "";
   }
 
   setCellValue(row, column, value) {
@@ -68,7 +68,7 @@ export class MockSpreadsheetService {
     this.fontStyles[key] = style;
   }
 
-  insertRowsAfter(afterRow, numRows = 1) {
+  insertRowsAfter(_afterRow, numRows = 1) {
     this.lastRow += numRows;
   }
 
@@ -76,7 +76,7 @@ export class MockSpreadsheetService {
     if (preserveHeaders) {
       const headerData = {};
       for (const key in this.data) {
-        if (key.startsWith('1,')) {
+        if (key.startsWith("1,")) {
           headerData[key] = this.data[key];
         }
       }
