@@ -2,7 +2,8 @@
  * Riot API通信エラー用のカスタム例外クラス
  */
 export class RiotAPIException extends Error {
-  constructor(message, apiResponse) {
+  public apiResponse: any;
+  constructor(message: string, apiResponse: any) {
     super(
       `Err: ${message}${apiResponse?.message || ""} (${apiResponse?.status_code || "Unknown"})`,
     );

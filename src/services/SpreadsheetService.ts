@@ -5,7 +5,7 @@ export class SpreadsheetService {
   /**
    * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - Google Sheetsのシートオブジェクト
    */
-  constructor(sheet) {
+  constructor(private sheet: GoogleAppsScript.Spreadsheet.Sheet | any) {
     if (!sheet) {
       throw new Error("Sheet object is required");
     }
@@ -26,7 +26,7 @@ export class SpreadsheetService {
    * @param {number} column - 列番号（1始まり）
    * @returns {any} セルの値
    */
-  getCellValue(row, column) {
+  getCellValue(row: number, column: number): any {
     return this.sheet.getRange(row, column).getValue();
   }
 
@@ -36,7 +36,7 @@ export class SpreadsheetService {
    * @param {number} column - 列番号（1始まり）
    * @param {any} value - 設定する値
    */
-  setCellValue(row, column, value) {
+  setCellValue(row: number, column: number, value: any): void {
     this.sheet.getRange(row, column).setValue(value);
   }
 
@@ -47,7 +47,12 @@ export class SpreadsheetService {
    * @param {string} url - リンクURL
    * @param {string} [label] - 表示テキスト（省略時はURLを表示）
    */
-  setHyperlink(row, column, url, label = null) {
+  setHyperlink(
+    row: number,
+    column: number,
+    url: string,
+    label: string | null = null,
+  ): void {
     const displayText = label || url;
     const formula = `=HYPERLINK("${url}", "${displayText}")`;
     this.sheet.getRange(row, column).setFormula(formula);
@@ -61,7 +66,12 @@ export class SpreadsheetService {
    * @param {number} numColumns - 列数
    * @returns {Array<Array<any>>} 値の2次元配列
    */
-  getRangeValues(row, column, numRows, numColumns) {
+  getRangeValues(
+    row: number,
+    column: number,
+    numRows: number,
+    numColumns: number,
+  ) {
     return this.sheet.getRange(row, column, numRows, numColumns).getValues();
   }
 
@@ -71,7 +81,7 @@ export class SpreadsheetService {
    * @param {number} column - 開始列番号（1始まり）
    * @param {Array<Array<any>>} values - 設定する値の2次元配列
    */
-  setRangeValues(row, column, values) {
+  setRangeValues(row: number, column: number, values: Array<Array<any>>) {
     const numRows = values.length;
     const numColumns = values[0]?.length || 0;
 
@@ -85,7 +95,7 @@ export class SpreadsheetService {
    * @param {number} row - 行番号（1始まり）
    * @returns {Array<any>} 行の値の配列
    */
-  getRowValues(row) {
+  getRowValues(row: number): Array<any> | undefined {
     const lastColumn = this.sheet.getLastColumn();
     return this.sheet.getRange(row, 1, 1, lastColumn).getValues()[0];
   }
@@ -96,7 +106,7 @@ export class SpreadsheetService {
    * @param {number} column - 列番号（1始まり）
    * @param {string} color - 色（例：'#FF0000' または 'red'）
    */
-  setCellBackground(row, column, color) {
+  setCellBackground(row: number, column: number, color: string) {
     this.sheet.getRange(row, column).setBackground(color);
   }
 
@@ -109,7 +119,7 @@ export class SpreadsheetService {
    * @param {boolean} [style.italic] - 斜体
    * @param {string} [style.color] - フォントカラー
    */
-  setCellFontStyle(row, column, style) {
+  setCellFontStyle(row: number, column: number, style: any) {
     const range = this.sheet.getRange(row, column);
 
     if (style.bold !== undefined) {
@@ -128,7 +138,7 @@ export class SpreadsheetService {
    * @param {number} afterRow - この行の後に挿入（1始まり）
    * @param {number} [numRows=1] - 挿入する行数
    */
-  insertRowsAfter(afterRow, numRows = 1) {
+  insertRowsAfter(afterRow: number, numRows: number = 1) {
     this.sheet.insertRowsAfter(afterRow, numRows);
   }
 

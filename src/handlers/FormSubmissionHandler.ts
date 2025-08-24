@@ -1,20 +1,45 @@
+import type { MockRiotAPIService } from "../__mocks__/RiotAPIService.js";
+import type { MockSpreadsheetService } from "../__mocks__/SpreadsheetService.js";
 import { COLUMN_INDEXES } from "../config/constants.js";
+import type { RankInfo, RiotAPIService } from "../services/RiotAPIService.js";
+import type { SpreadsheetService } from "../services/SpreadsheetService.js";
+import { RiotAPIException } from "../utils/RiotAPIException.js";
 import {
   buildOpggUrl,
   formatSummonerDisplayName,
   parseOpggUrl,
+  type SummonerInfo,
 } from "../utils/urlParser.js";
+
+export type GameData = {
+  puuid: string;
+  summonerLevel: number;
+  rankInfo:
+    | {
+        solo: RankInfo | null | undefined;
+        flex: RankInfo | null | undefined;
+      }
+    | {
+        error: string;
+      }
+    | null;
+};
 
 /**
  * フォーム送信を処理するハンドラークラス
  * ビジネスロジックの調整役として機能
  */
 export class FormSubmissionHandler {
+  spreadsheet: SpreadsheetService | MockSpreadsheetService;
+  riotAPI: RiotAPIService | MockRiotAPIService;
   /**
-   * @param {SpreadsheetService} spreadsheetService - スプレッドシート操作サービス
-   * @param {RiotAPIService} riotAPIService - Riot API通信サービス
+   * @param {SpreadsheetService | MockSpreadsheetService} spreadsheetService - スプレッドシート操作サービス
+   * @param {RiotAPIService | MockRiotAPIService} riotAPIService - Riot API通信サービス
    */
-  constructor(spreadsheetService, riotAPIService) {
+  constructor(
+    spreadsheetService: SpreadsheetService | MockSpreadsheetService,
+    riotAPIService: RiotAPIService | MockRiotAPIService,
+  ) {
     this.spreadsheet = spreadsheetService;
     this.riotAPI = riotAPIService;
   }
@@ -23,7 +48,7 @@ export class FormSubmissionHandler {
    * フォーム送信イベントを処理
    * @param {Object} formEvent - Google Formsのイベントオブジェクト
    */
-  async handle(formEvent) {
+  async handle(formEvent: any) {
     try {
       const lastRow =
         formEvent?.range?.getRow?.() || this.spreadsheet.getLastRow();
@@ -72,7 +97,7 @@ export class FormSubmissionHandler {
    * フォームデータを抽出
    * @private
    */
-  extractFormData(row) {
+  extractFormData(row: number) {
     return {
       role: this.spreadsheet.getCellValue(row, COLUMN_INDEXES.ROLE),
       opggUrl: this.spreadsheet.getCellValue(row, COLUMN_INDEXES.OPGG_URL),
@@ -83,14 +108,14 @@ export class FormSubmissionHandler {
    * サモナー情報を処理
    * @private
    */
-  processSummonerInfo(opggUrl, row) {
+  processSummonerInfo(opggUrl: string, row: number) {
     try {
       // URLを解析
-      const parsedUrl = parseOpggUrl(opggUrl);
-      if (!parsedUrl) {
+      const parsedOpggInfo = parseOpggUrl(opggUrl);
+      if (!parsedOpggInfo) {
         throw new Error("OPGG URLの解析に失敗しました。");
       }
-      return parsedUrl;
+      return parsedOpggInfo;
     } catch {
       this.spreadsheet.setCellValue(
         row,
@@ -105,8 +130,8 @@ export class FormSubmissionHandler {
    * ゲームデータを取得
    * @private
    */
-  async fetchGameData(summonerInfo, row) {
-    let puuid;
+  async fetchGameData(summonerInfo: SummonerInfo, row: number) {
+    let puuid: string;
     try {
       puuid = await this.riotAPI.getAccountPuuid(
         summonerInfo.summonerName,
@@ -135,16 +160,20 @@ export class FormSubmissionHandler {
         displayName,
       );
     } catch (e) {
-      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, e.message);
+      if (e instanceof RiotAPIException) {
+        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, e.message);
+      }
       return null;
     }
 
-    let summonerLevel;
+    let summonerLevel: number;
     try {
       summonerLevel = await this.riotAPI.getSummonerLevel(puuid);
       this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, summonerLevel);
     } catch (e) {
-      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, e.message);
+      if (e instanceof RiotAPIException) {
+        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, e.message);
+      }
       return null;
     }
 
@@ -154,8 +183,10 @@ export class FormSubmissionHandler {
       try {
         rankInfo = await this.riotAPI.getRankInfo(puuid);
       } catch (e) {
-        // ランク情報取得エラーは後で処理
-        rankInfo = { error: e.message };
+        if (e instanceof RiotAPIException) {
+          // ランク情報取得エラーは後で処理
+          rankInfo = { error: e.message };
+        }
       }
     }
 
@@ -170,7 +201,7 @@ export class FormSubmissionHandler {
    * ゲームデータをシートに書き込み
    * @private
    */
-  writeGameDataToSheet(gameData, row) {
+  writeGameDataToSheet(gameData: GameData, row: number) {
     // サモナーレベルを記録
     this.spreadsheet.setCellValue(
       row,
@@ -184,7 +215,7 @@ export class FormSubmissionHandler {
       this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, "情報なし");
       this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, "情報なし");
 
-      if (gameData.rankInfo && !gameData.rankInfo.error) {
+      if (gameData.rankInfo && !("error" in gameData.rankInfo)) {
         // ソロランク
         const soloRankText = gameData.rankInfo.solo
           ? `${gameData.rankInfo.solo.tier} ${gameData.rankInfo.solo.rank}`

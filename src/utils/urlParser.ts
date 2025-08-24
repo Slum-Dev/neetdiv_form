@@ -1,17 +1,22 @@
 /**
- * @typedef OpggUrl
  * @property {string} summonerName  サモナー名
  * @property {string} tagLine       タグライン
  * @property {string} region        リージョン
  * @property {string} cleanedUrl    整形+URLエンコード済みURL
  */
+export type SummonerInfo = {
+  summonerName: string;
+  tagLine: string;
+  region: string;
+  cleanedUrl: string;
+};
 
 /**
  * OPGG URLを解析してサモナー情報を抽出
  * @param {string} opggUrl - OPGG URL
- * @returns {OpggUrl | undefined} サモナー情報
+ * @returns {SummonerInfo | undefined} サモナー情報
  */
-export function parseOpggUrl(opggUrl) {
+export function parseOpggUrl(opggUrl: string | any): SummonerInfo | undefined {
   if (!opggUrl || typeof opggUrl !== "string") {
     return;
   }
@@ -49,7 +54,10 @@ export function parseOpggUrl(opggUrl) {
  * @param {string} tagLine - タグライン
  * @returns {string} 表示名（例：SummonerName#JP1）
  */
-export function formatSummonerDisplayName(summonerName, tagLine) {
+export function formatSummonerDisplayName(
+  summonerName: string,
+  tagLine: string,
+): string {
   return `${summonerName}#${tagLine}`;
 }
 
@@ -60,7 +68,11 @@ export function formatSummonerDisplayName(summonerName, tagLine) {
  * @param {string} [region='jp'] - リージョン
  * @returns {string} OPGG URL
  */
-export function buildOpggUrl(summonerName, tagLine, region = "jp") {
+export function buildOpggUrl(
+  summonerName: string,
+  tagLine: string,
+  region: string = "jp",
+): string {
   const encodedName = encodeURIComponent(summonerName);
   const encodedTag = encodeURIComponent(tagLine);
   return `https://op.gg/summoners/${region}/${encodedName}-${encodedTag}`;

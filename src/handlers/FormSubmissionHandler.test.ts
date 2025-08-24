@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { MockRiotAPIService } from "../__mocks__/RiotAPIService.js";
 import { MockSpreadsheetService } from "../__mocks__/SpreadsheetService.js";
-import { FormSubmissionHandler } from "./FormSubmissionHandler.js";
+import {
+  FormSubmissionHandler,
+  type GameData,
+} from "./FormSubmissionHandler.js";
 
 describe("FormSubmissionHandler", () => {
-  let handler;
-  let mockSpreadsheet;
-  let mockRiotAPI;
+  let handler: FormSubmissionHandler;
+  let mockSpreadsheet: MockSpreadsheetService;
+  let mockRiotAPI: MockRiotAPIService;
 
   beforeEach(() => {
     mockSpreadsheet = new MockSpreadsheetService();
@@ -156,8 +159,8 @@ describe("FormSubmissionHandler", () => {
       const result = handler.processSummonerInfo(url, 10);
 
       // Assert
-      expect(result.summonerName).toBe("テスト");
-      expect(result.tagLine).toBe("JP1");
+      expect(result?.summonerName).toBe("テスト");
+      expect(result?.tagLine).toBe("JP1");
     });
   });
 
@@ -175,7 +178,12 @@ describe("FormSubmissionHandler", () => {
 
       // Act
       const result = await handler.fetchGameData(
-        { summonerName: "Test", tagLine: "JP1" },
+        {
+          summonerName: "Test",
+          tagLine: "JP1",
+          region: "jp",
+          cleanedUrl: "https://op.gg/summoners/jp/Test-JP1",
+        },
         10,
       );
 
@@ -197,7 +205,12 @@ describe("FormSubmissionHandler", () => {
 
       // Act
       const result = await handler.fetchGameData(
-        { summonerName: "Invalid", tagLine: "JP1" },
+        {
+          summonerName: "Invalid",
+          tagLine: "JP1",
+          region: "jp",
+          cleanedUrl: "https://op.gg/summoners/jp/Invalid-JP1",
+        },
         10,
       );
 
@@ -216,7 +229,12 @@ describe("FormSubmissionHandler", () => {
 
       // Act
       const result = await handler.fetchGameData(
-        { summonerName: "Test", tagLine: "JP1" },
+        {
+          summonerName: "Test",
+          tagLine: "JP1",
+          region: "jp",
+          cleanedUrl: "https://op.gg/summoners/jp/Test-JP1",
+        },
         10,
       );
 
@@ -229,12 +247,38 @@ describe("FormSubmissionHandler", () => {
   describe("writeGameDataToSheet", () => {
     it("ランク情報を含む全データをシートに書き込む", () => {
       // Arrange
-      const gameData = {
+      const gameData: GameData = {
         puuid: "test-puuid",
         summonerLevel: 150,
         rankInfo: {
-          solo: { tier: "PLATINUM", rank: "II" },
-          flex: { tier: "GOLD", rank: "I" },
+          solo: {
+            tier: "PLATINUM",
+            rank: "II",
+            leagueId: "",
+            queueType: "",
+            summonerId: "",
+            leaguePoints: 0,
+            wins: 0,
+            losses: 0,
+            veteran: false,
+            inactive: false,
+            freshBlood: false,
+            hotStreak: false,
+          },
+          flex: {
+            tier: "GOLD",
+            rank: "I",
+            leagueId: "",
+            queueType: "",
+            summonerId: "",
+            leaguePoints: 0,
+            wins: 0,
+            losses: 0,
+            veteran: false,
+            inactive: false,
+            freshBlood: false,
+            hotStreak: false,
+          },
         },
       };
 
@@ -282,11 +326,24 @@ describe("FormSubmissionHandler", () => {
 
     it("片方のみランクを持つ場合を正しく処理", () => {
       // Arrange
-      const gameData = {
+      const gameData: GameData = {
         puuid: "test-puuid",
         summonerLevel: 100,
         rankInfo: {
-          solo: { tier: "GOLD", rank: "III" },
+          solo: {
+            tier: "GOLD",
+            rank: "III",
+            leagueId: "",
+            queueType: "",
+            summonerId: "",
+            leaguePoints: 0,
+            wins: 0,
+            losses: 0,
+            veteran: false,
+            inactive: false,
+            freshBlood: false,
+            hotStreak: false,
+          },
           flex: null,
         },
       };
