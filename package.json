@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "esbuild src/main.js --bundle --outfile=dist/Code.gs --format=esm --platform=browser --target=es2020",
+    "build": "esbuild src/main.ts --bundle --outfile=dist/Code.gs --format=esm --platform=browser --target=es2020",
     "build:watch": "npm run build -- --watch",
     "build:dev": "npm run build -- --sourcemap",
     "format": "prettier -w **/*.{json,md,yml} && biome check --write",
