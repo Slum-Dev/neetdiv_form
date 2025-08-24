@@ -29,7 +29,7 @@ export function mapFormRoleToAPI(formRole) {
   if (!formRole) {
     return "";
   }
-  
+
   const upperRole = formRole.toUpperCase();
   return ROLE_MAP[upperRole] || formRole;
 }
@@ -43,7 +43,7 @@ export function mapAPIRoleToForm(apiRole) {
   if (!apiRole) {
     return "";
   }
-  
+
   const upperRole = apiRole.toUpperCase();
   return REVERSE_ROLE_MAP[upperRole] || apiRole;
 }
@@ -57,7 +57,7 @@ export function isValidFormRole(role) {
   if (!role) {
     return false;
   }
-  
+
   const upperRole = role.toUpperCase();
   return Object.keys(ROLE_MAP).includes(upperRole);
 }
@@ -71,7 +71,7 @@ export function isValidAPIRole(role) {
   if (!role) {
     return false;
   }
-  
+
   const upperRole = role.toUpperCase();
   return Object.values(ROLE_MAP).includes(upperRole);
 }
@@ -109,11 +109,11 @@ export function getRoleDisplayName(role) {
     SUP: "サポート",
     UTILITY: "サポート",
   };
-  
+
   if (!role) {
     return "不明";
   }
-  
+
   const upperRole = role.toUpperCase();
   return roleDisplayNames[upperRole] || role;
 }

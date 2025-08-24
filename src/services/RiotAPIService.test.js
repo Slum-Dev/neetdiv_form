@@ -1,285 +1,305 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RiotAPIService } from './RiotAPIService.js';
-import { MockRiotAPIService } from '../__mocks__/RiotAPIService.js';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MockRiotAPIService } from "../__mocks__/RiotAPIService.js";
+import { RiotAPIService } from "./RiotAPIService.js";
 
 // UrlFetchAppのモック
 global.UrlFetchApp = {
-  fetch: vi.fn()
+  fetch: vi.fn(),
 };
 
-describe('RiotAPIService', () => {
+describe("RiotAPIService", () => {
   let service;
-  const mockApiKey = 'test-api-key';
+  const mockApiKey = "test-api-key";
 
   beforeEach(() => {
     service = new RiotAPIService(mockApiKey);
     vi.clearAllMocks();
   });
 
-  describe('fetch', () => {
-    it('200レスポンスの場合JSONをパースして返す', async () => {
+  describe("fetch", () => {
+    it("200レスポンスの場合JSONをパースして返す", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify({ data: 'test' })
+        getContentText: () => JSON.stringify({ data: "test" }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      const result = await service.fetch('get', 'https://api.test.com');
+      const result = await service.fetch("get", "https://api.test.com");
 
       // Assert
-      expect(result).toEqual({ data: 'test' });
+      expect(result).toEqual({ data: "test" });
       expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
-        'https://api.test.com',
+        "https://api.test.com",
         expect.objectContaining({
-          method: 'get',
-          headers: { 'X-Riot-Token': mockApiKey },
-          muteHttpExceptions: true
-        })
+          method: "get",
+          headers: { "X-Riot-Token": mockApiKey },
+          muteHttpExceptions: true,
+        }),
       );
     });
 
-    it('200以外のレスポンスの場合例外をthrowする', async () => {
+    it("200以外のレスポンスの場合例外をthrowする", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
+        getContentText: () =>
+          JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act & Assert
-      await expect(service.fetch('get', 'https://api.test.com')).rejects.toThrow();
+      await expect(
+        service.fetch("get", "https://api.test.com"),
+      ).rejects.toThrow();
     });
 
-    it('ネットワークエラーの場合例外をthrowする', async () => {
+    it("ネットワークエラーの場合例外をthrowする", async () => {
       // Arrange
       global.UrlFetchApp.fetch.mockImplementation(() => {
-        throw new Error('Network error');
+        throw new Error("Network error");
       });
 
       // Act & Assert
-      await expect(service.fetch('get', 'https://api.test.com')).rejects.toThrow('Network error');
+      await expect(
+        service.fetch("get", "https://api.test.com"),
+      ).rejects.toThrow("Network error");
     });
   });
 
-  describe('getAccountPuuid', () => {
-    it('正常にPUUIDを取得できる', async () => {
+  describe("getAccountPuuid", () => {
+    it("正常にPUUIDを取得できる", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify({ 
-          puuid: 'test-puuid-123',
-          gameName: 'TestPlayer',
-          tagLine: 'JP1'
-        })
+        getContentText: () =>
+          JSON.stringify({
+            puuid: "test-puuid-123",
+            gameName: "TestPlayer",
+            tagLine: "JP1",
+          }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      const result = await service.getAccountPuuid('TestPlayer', 'JP1');
+      const result = await service.getAccountPuuid("TestPlayer", "JP1");
 
       // Assert
-      expect(result).toBe('test-puuid-123');
+      expect(result).toBe("test-puuid-123");
       expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/riot/account/v1/accounts/by-riot-id/TestPlayer/JP1'),
-        expect.any(Object)
+        expect.stringContaining(
+          "/riot/account/v1/accounts/by-riot-id/TestPlayer/JP1",
+        ),
+        expect.any(Object),
       );
     });
 
-    it('日本語を含む名前を正しくエンコード', async () => {
+    it("日本語を含む名前を正しくエンコード", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify({ puuid: 'jp-puuid' })
+        getContentText: () => JSON.stringify({ puuid: "jp-puuid" }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      await service.getAccountPuuid('テストプレイヤー', 'JP1');
+      await service.getAccountPuuid("テストプレイヤー", "JP1");
 
       // Assert
       expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(encodeURIComponent('テストプレイヤー')),
-        expect.any(Object)
+        expect.stringContaining(encodeURIComponent("テストプレイヤー")),
+        expect.any(Object),
       );
     });
 
-    it('アカウントが見つからない場合RiotAPIExceptionをthrowする', async () => {
+    it("アカウントが見つからない場合RiotAPIExceptionをthrowする", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
+        getContentText: () =>
+          JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act & Assert
-      await expect(service.getAccountPuuid('Invalid', 'JP1')).rejects.toThrow('Riotアカウントの問い合わせに失敗しました');
+      await expect(service.getAccountPuuid("Invalid", "JP1")).rejects.toThrow(
+        "Riotアカウントの問い合わせに失敗しました",
+      );
     });
   });
 
-  describe('getSummonerLevel', () => {
-    it('正常にサモナーレベルを取得できる', async () => {
+  describe("getSummonerLevel", () => {
+    it("正常にサモナーレベルを取得できる", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify({ 
-          summonerLevel: 150,
-          id: 'summoner-id',
-          accountId: 'account-id'
-        })
+        getContentText: () =>
+          JSON.stringify({
+            summonerLevel: 150,
+            id: "summoner-id",
+            accountId: "account-id",
+          }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      const result = await service.getSummonerLevel('test-puuid');
+      const result = await service.getSummonerLevel("test-puuid");
 
       // Assert
       expect(result).toBe(150);
       expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/lol/summoner/v4/summoners/by-puuid/test-puuid'),
-        expect.any(Object)
+        expect.stringContaining(
+          "/lol/summoner/v4/summoners/by-puuid/test-puuid",
+        ),
+        expect.any(Object),
       );
     });
 
-    it('サモナーが見つからない場合RiotAPIExceptionをthrowする', async () => {
+    it("サモナーが見つからない場合RiotAPIExceptionをthrowする", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
+        getContentText: () =>
+          JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act & Assert
-      await expect(service.getSummonerLevel('invalid-puuid')).rejects.toThrow('サモナーレベルの取得に失敗しました');
+      await expect(service.getSummonerLevel("invalid-puuid")).rejects.toThrow(
+        "サモナーレベルの取得に失敗しました",
+      );
     });
   });
 
-  describe('getRankInfo', () => {
-    it('ソロとフレックスの両方のランク情報を取得', async () => {
+  describe("getRankInfo", () => {
+    it("ソロとフレックスの両方のランク情報を取得", async () => {
       // Arrange
       const mockRanks = [
         {
-          queueType: 'RANKED_SOLO_5x5',
-          tier: 'GOLD',
-          rank: 'III',
-          leaguePoints: 75
+          queueType: "RANKED_SOLO_5x5",
+          tier: "GOLD",
+          rank: "III",
+          leaguePoints: 75,
         },
         {
-          queueType: 'RANKED_FLEX_SR',
-          tier: 'SILVER',
-          rank: 'I',
-          leaguePoints: 50
-        }
+          queueType: "RANKED_FLEX_SR",
+          tier: "SILVER",
+          rank: "I",
+          leaguePoints: 50,
+        },
       ];
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify(mockRanks)
+        getContentText: () => JSON.stringify(mockRanks),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      const result = await service.getRankInfo('test-puuid');
+      const result = await service.getRankInfo("test-puuid");
 
       // Assert
       expect(result.solo).toEqual(mockRanks[0]);
       expect(result.flex).toEqual(mockRanks[1]);
     });
 
-    it('ソロランクのみの場合', async () => {
+    it("ソロランクのみの場合", async () => {
       // Arrange
       const mockRanks = [
         {
-          queueType: 'RANKED_SOLO_5x5',
-          tier: 'DIAMOND',
-          rank: 'IV'
-        }
+          queueType: "RANKED_SOLO_5x5",
+          tier: "DIAMOND",
+          rank: "IV",
+        },
       ];
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify(mockRanks)
+        getContentText: () => JSON.stringify(mockRanks),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      const result = await service.getRankInfo('test-puuid');
+      const result = await service.getRankInfo("test-puuid");
 
       // Assert
       expect(result.solo).toEqual(mockRanks[0]);
       expect(result.flex).toBeUndefined();
     });
 
-    it('アンランクの場合空の配列を受け取る', async () => {
+    it("アンランクの場合空の配列を受け取る", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify([])
+        getContentText: () => JSON.stringify([]),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      const result = await service.getRankInfo('test-puuid');
+      const result = await service.getRankInfo("test-puuid");
 
       // Assert
       expect(result.solo).toBeUndefined();
       expect(result.flex).toBeUndefined();
     });
 
-    it('エラーの場合RiotAPIExceptionをthrowする', async () => {
+    it("エラーの場合RiotAPIExceptionをthrowする", async () => {
       // Arrange
       const mockResponse = {
         getResponseCode: () => 404,
-        getContentText: () => JSON.stringify({message: 'Not Found', status_code: 404})
+        getContentText: () =>
+          JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act & Assert
-      await expect(service.getRankInfo('invalid-puuid')).rejects.toThrow('ランクの取得に失敗しました');
-    });
-  });
-
-  describe('getMatchIds', () => {
-    it('マッチIDリストを取得できる', async () => {
-      // Arrange
-      const mockMatchIds = ['JP1_12345', 'JP1_67890'];
-      const mockResponse = {
-        getResponseCode: () => 200,
-        getContentText: () => JSON.stringify(mockMatchIds)
-      };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
-
-      // Act
-      const result = await service.getMatchIds('test-puuid', 0, 20);
-
-      // Assert
-      expect(result).toEqual(mockMatchIds);
-      expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('start=0&count=20'),
-        expect.any(Object)
+      await expect(service.getRankInfo("invalid-puuid")).rejects.toThrow(
+        "ランクの取得に失敗しました",
       );
     });
   });
 
-  describe('getMatchDetail', () => {
-    it('マッチ詳細を取得できる', async () => {
+  describe("getMatchIds", () => {
+    it("マッチIDリストを取得できる", async () => {
       // Arrange
-      const mockMatch = {
-        info: {
-          gameMode: 'CLASSIC',
-          participants: [
-            { puuid: 'player1', championName: 'Lux' },
-            { puuid: 'player2', championName: 'Jinx' }
-          ]
-        }
-      };
+      const mockMatchIds = ["JP1_12345", "JP1_67890"];
       const mockResponse = {
         getResponseCode: () => 200,
-        getContentText: () => JSON.stringify(mockMatch)
+        getContentText: () => JSON.stringify(mockMatchIds),
       };
       global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
 
       // Act
-      const result = await service.getMatchDetail('JP1_12345');
+      const result = await service.getMatchIds("test-puuid", 0, 20);
+
+      // Assert
+      expect(result).toEqual(mockMatchIds);
+      expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("start=0&count=20"),
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe("getMatchDetail", () => {
+    it("マッチ詳細を取得できる", async () => {
+      // Arrange
+      const mockMatch = {
+        info: {
+          gameMode: "CLASSIC",
+          participants: [
+            { puuid: "player1", championName: "Lux" },
+            { puuid: "player2", championName: "Jinx" },
+          ],
+        },
+      };
+      const mockResponse = {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify(mockMatch),
+      };
+      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+
+      // Act
+      const result = await service.getMatchDetail("JP1_12345");
 
       // Assert
       expect(result).toEqual(mockMatch);
@@ -287,55 +307,55 @@ describe('RiotAPIService', () => {
   });
 });
 
-describe('MockRiotAPIService', () => {
+describe("MockRiotAPIService", () => {
   let mockService;
 
   beforeEach(() => {
     mockService = new MockRiotAPIService();
   });
 
-  it('デフォルトの応答を返す', async () => {
-    const puuid = await mockService.getAccountPuuid('Test', 'JP1');
+  it("デフォルトの応答を返す", async () => {
+    const puuid = await mockService.getAccountPuuid("Test", "JP1");
     const level = await mockService.getSummonerLevel(puuid);
     const rank = await mockService.getRankInfo(puuid);
 
-    expect(puuid).toBe('mock-puuid-123');
+    expect(puuid).toBe("mock-puuid-123");
     expect(level).toBe(150);
-    expect(rank.solo).toEqual({ tier: 'GOLD', rank: 'III' });
+    expect(rank.solo).toEqual({ tier: "GOLD", rank: "III" });
   });
 
-  it('カスタム応答を設定できる', async () => {
+  it("カスタム応答を設定できる", async () => {
     mockService.responses = {
-      puuid: 'custom-puuid',
+      puuid: "custom-puuid",
       summonerLevel: 200,
       rankInfo: {
-        solo: { tier: 'DIAMOND', rank: 'I' },
-        flex: { tier: 'PLATINUM', rank: 'II' }
-      }
+        solo: { tier: "DIAMOND", rank: "I" },
+        flex: { tier: "PLATINUM", rank: "II" },
+      },
     };
 
-    const puuid = await mockService.getAccountPuuid('Test', 'JP1');
+    const puuid = await mockService.getAccountPuuid("Test", "JP1");
     const level = await mockService.getSummonerLevel(puuid);
     const rank = await mockService.getRankInfo(puuid);
 
-    expect(puuid).toBe('custom-puuid');
+    expect(puuid).toBe("custom-puuid");
     expect(level).toBe(200);
-    expect(rank.solo.tier).toBe('DIAMOND');
-    expect(rank.flex.tier).toBe('PLATINUM');
+    expect(rank.solo.tier).toBe("DIAMOND");
+    expect(rank.flex.tier).toBe("PLATINUM");
   });
 
-  it('メソッド呼び出し履歴を記録する', async () => {
-    await mockService.getAccountPuuid('TestPlayer', 'JP1');
-    await mockService.getSummonerLevel('test-puuid');
+  it("メソッド呼び出し履歴を記録する", async () => {
+    await mockService.getAccountPuuid("TestPlayer", "JP1");
+    await mockService.getSummonerLevel("test-puuid");
 
     expect(mockService.callHistory).toHaveLength(2);
     expect(mockService.callHistory[0]).toEqual({
-      method: 'getAccountPuuid',
-      args: ['TestPlayer', 'JP1']
+      method: "getAccountPuuid",
+      args: ["TestPlayer", "JP1"],
     });
     expect(mockService.callHistory[1]).toEqual({
-      method: 'getSummonerLevel',
-      args: ['test-puuid']
+      method: "getSummonerLevel",
+      args: ["test-puuid"],
     });
   });
 });

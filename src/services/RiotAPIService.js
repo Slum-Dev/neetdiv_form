@@ -1,5 +1,5 @@
-import { API_ENDPOINTS } from '../config/constants.js';
-import { RiotAPIException } from '../utils/RiotAPIException.js';
+import { API_ENDPOINTS } from "../config/constants.js";
+import { RiotAPIException } from "../utils/RiotAPIException.js";
 
 /**
  * Riot APIとの通信を管理するサービスクラス
@@ -31,14 +31,14 @@ export class RiotAPIService {
       },
       muteHttpExceptions: true,
     });
-    
+
     const responseCode = response.getResponseCode();
     const responseBody = JSON.parse(response.getContentText());
-    
+
     if (responseCode !== 200) {
-      throw new Error(responseCode, {cause: responseBody});
+      throw new Error(responseCode, { cause: responseBody });
     }
-    
+
     return responseBody;
   }
 
@@ -50,11 +50,7 @@ export class RiotAPIService {
    * @returns {Promise<any>}
    */
   async get(url) {
-    try {
-      return this.fetch("get", url);
-    } catch (e) {
-      throw e;
-    }
+    return this.fetch("get", url);
   }
 
   /**
@@ -70,7 +66,10 @@ export class RiotAPIService {
       const account = await this.get(url);
       return account?.puuid;
     } catch (e) {
-      throw new RiotAPIException('Riotアカウントの問い合わせに失敗しました。', e.cause);
+      throw new RiotAPIException(
+        "Riotアカウントの問い合わせに失敗しました。",
+        e.cause,
+      );
     }
   }
 
@@ -86,7 +85,10 @@ export class RiotAPIService {
       const summoner = await this.get(url);
       return summoner?.summonerLevel;
     } catch (e) {
-      throw new RiotAPIException('サモナーレベルの取得に失敗しました。', e.cause);
+      throw new RiotAPIException(
+        "サモナーレベルの取得に失敗しました。",
+        e.cause,
+      );
     }
   }
 
@@ -116,13 +118,13 @@ export class RiotAPIService {
     try {
       const url = `${API_ENDPOINTS.BASE_URL_JP}/lol/league/v4/entries/by-puuid/${puuid}`;
       const ranks = await this.get(url);
-      
+
       return {
         solo: ranks.find((e) => e.queueType === "RANKED_SOLO_5x5"),
         flex: ranks.find((e) => e.queueType === "RANKED_FLEX_SR"),
       };
     } catch (e) {
-      throw new RiotAPIException('ランクの取得に失敗しました。', e.cause);
+      throw new RiotAPIException("ランクの取得に失敗しました。", e.cause);
     }
   }
 

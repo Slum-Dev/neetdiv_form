@@ -1,0 +1,14 @@
+#   Refer for explanation to following link:
+#   https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "*.{json,md,yml,yaml}"
+      stage_fixed: true
+      run: npx prettier -w {staged_files}
+    lint-code:
+      glob: "*.{ts,js,tsx,jsx}"
+      stage_fixed: true
+      run: npx biome check --write --unsafe --error-on-warnings {staged_files}
