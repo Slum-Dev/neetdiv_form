@@ -25,8 +25,15 @@ const createMockRange = (value = "") => ({
 });
 
 describe("SpreadsheetService", () => {
-  let service;
-  let mockSheet;
+  let service: SpreadsheetService;
+  let mockSheet: {
+    getLastRow: any;
+    getRange: any;
+    getLastColumn: any;
+    insertRowsAfter: any;
+    deleteRows: any;
+    clear: any;
+  };
 
   beforeEach(() => {
     mockSheet = createMockSheet();
@@ -250,7 +257,7 @@ describe("SpreadsheetService", () => {
 });
 
 describe("MockSpreadsheetService", () => {
-  let mockService;
+  let mockService: MockSpreadsheetService;
 
   beforeEach(() => {
     mockService = new MockSpreadsheetService();

@@ -9,7 +9,7 @@ import { getApiKey } from "./utils/gasHelpers.js";
  * フォーム送信時のエントリーポイント
  * @param {Object} e - フォーム送信イベント
  */
-function onFormSubmit(e) {
+function onFormSubmit(e: any) {
   try {
     // 依存性の初期化
     const apiKey = getApiKey();
@@ -32,5 +32,4 @@ function onFormSubmit(e) {
     throw error;
   }
 }
-
-globalThis.onFormSubmit = onFormSubmit;
+(globalThis as any).onFormSubmit = onFormSubmit;

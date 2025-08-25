@@ -1,19 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MockRiotAPIService } from "../__mocks__/RiotAPIService.js";
 import { RiotAPIService } from "./RiotAPIService.js";
 
-// UrlFetchAppのモック
-global.UrlFetchApp = {
-  fetch: vi.fn(),
-};
-
 describe("RiotAPIService", () => {
-  let service;
+  let service: RiotAPIService;
   const mockApiKey = "test-api-key";
+  const mockFetch = vi.fn();
 
   beforeEach(() => {
+    vi.stubGlobal("UrlFetchApp", {
+      fetch: mockFetch,
+    });
     service = new RiotAPIService(mockApiKey);
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe("fetch", () => {
@@ -23,14 +26,14 @@ describe("RiotAPIService", () => {
         getResponseCode: () => 200,
         getContentText: () => JSON.stringify({ data: "test" }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.fetch("get", "https://api.test.com");
 
       // Assert
       expect(result).toEqual({ data: "test" });
-      expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         "https://api.test.com",
         expect.objectContaining({
           method: "get",
@@ -47,7 +50,7 @@ describe("RiotAPIService", () => {
         getContentText: () =>
           JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act & Assert
       await expect(
@@ -57,7 +60,7 @@ describe("RiotAPIService", () => {
 
     it("ネットワークエラーの場合例外をthrowする", async () => {
       // Arrange
-      global.UrlFetchApp.fetch.mockImplementation(() => {
+      mockFetch.mockImplementation(() => {
         throw new Error("Network error");
       });
 
@@ -80,14 +83,14 @@ describe("RiotAPIService", () => {
             tagLine: "JP1",
           }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.getAccountPuuid("TestPlayer", "JP1");
 
       // Assert
       expect(result).toBe("test-puuid-123");
-      expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining(
           "/riot/account/v1/accounts/by-riot-id/TestPlayer/JP1",
         ),
@@ -101,13 +104,13 @@ describe("RiotAPIService", () => {
         getResponseCode: () => 200,
         getContentText: () => JSON.stringify({ puuid: "jp-puuid" }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       await service.getAccountPuuid("テストプレイヤー", "JP1");
 
       // Assert
-      expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining(encodeURIComponent("テストプレイヤー")),
         expect.any(Object),
       );
@@ -120,7 +123,7 @@ describe("RiotAPIService", () => {
         getContentText: () =>
           JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act & Assert
       await expect(service.getAccountPuuid("Invalid", "JP1")).rejects.toThrow(
@@ -141,14 +144,14 @@ describe("RiotAPIService", () => {
             accountId: "account-id",
           }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.getSummonerLevel("test-puuid");
 
       // Assert
       expect(result).toBe(150);
-      expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining(
           "/lol/summoner/v4/summoners/by-puuid/test-puuid",
         ),
@@ -163,7 +166,7 @@ describe("RiotAPIService", () => {
         getContentText: () =>
           JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act & Assert
       await expect(service.getSummonerLevel("invalid-puuid")).rejects.toThrow(
@@ -193,7 +196,7 @@ describe("RiotAPIService", () => {
         getResponseCode: () => 200,
         getContentText: () => JSON.stringify(mockRanks),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.getRankInfo("test-puuid");
@@ -216,7 +219,7 @@ describe("RiotAPIService", () => {
         getResponseCode: () => 200,
         getContentText: () => JSON.stringify(mockRanks),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.getRankInfo("test-puuid");
@@ -232,7 +235,7 @@ describe("RiotAPIService", () => {
         getResponseCode: () => 200,
         getContentText: () => JSON.stringify([]),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.getRankInfo("test-puuid");
@@ -249,7 +252,7 @@ describe("RiotAPIService", () => {
         getContentText: () =>
           JSON.stringify({ message: "Not Found", status_code: 404 }),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act & Assert
       await expect(service.getRankInfo("invalid-puuid")).rejects.toThrow(
@@ -266,14 +269,14 @@ describe("RiotAPIService", () => {
         getResponseCode: () => 200,
         getContentText: () => JSON.stringify(mockMatchIds),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.getMatchIds("test-puuid", 0, 20);
 
       // Assert
       expect(result).toEqual(mockMatchIds);
-      expect(global.UrlFetchApp.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining("start=0&count=20"),
         expect.any(Object),
       );
@@ -296,7 +299,7 @@ describe("RiotAPIService", () => {
         getResponseCode: () => 200,
         getContentText: () => JSON.stringify(mockMatch),
       };
-      global.UrlFetchApp.fetch.mockReturnValue(mockResponse);
+      mockFetch.mockReturnValue(mockResponse);
 
       // Act
       const result = await service.getMatchDetail("JP1_12345");
@@ -308,7 +311,7 @@ describe("RiotAPIService", () => {
 });
 
 describe("MockRiotAPIService", () => {
-  let mockService;
+  let mockService: MockRiotAPIService;
 
   beforeEach(() => {
     mockService = new MockRiotAPIService();
