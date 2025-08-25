@@ -2,7 +2,6 @@
   "recommendations": [
     "editorconfig.editorconfig",
     "biomejs.biome",
-    "vitest.explorer",
-    "ms-vscode.vscode-typescript-next"
+    "vitest.explorer"
   ]
 }

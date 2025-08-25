@@ -12,3 +12,6 @@ pre-commit:
       glob: "*.{ts,js,tsx,jsx}"
       stage_fixed: true
       run: npx biome check --write --unsafe {staged_files}
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: npm run typecheck
