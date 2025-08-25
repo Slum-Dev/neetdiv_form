@@ -10,11 +10,10 @@
     "noEmit": true,
     // GASでクラスフィールドが使えないための対応
     "useDefineForClassFields": false,
-    // オブジェクトの詰め替えが難しくなるのでオフ
-    "exactOptionalPropertyTypes": false,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
 
     // Recommended Options
     "strict": true,
