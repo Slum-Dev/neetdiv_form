@@ -11,15 +11,5 @@
   },
   "formatter": {
     "indentStyle": "space"
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "suspicious": {
-        "noExplicitAny": "off",
-        "noImplicitAnyLet": "off"
-      }
-    }
   }
 }

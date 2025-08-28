@@ -1,44 +1,45 @@
-import type { MockRiotAPIService } from "../__mocks__/RiotAPIService.js";
-import type { MockSpreadsheetService } from "../__mocks__/SpreadsheetService.js";
 import { COLUMN_INDEXES } from "../config/constants.js";
-import type { RankInfo, RiotAPIService } from "../services/RiotAPIService.js";
-import type { SpreadsheetService } from "../services/SpreadsheetService.js";
-import { RiotAPIException } from "../utils/RiotAPIException.js";
+import {
+  type RankInfo,
+  RiotAPIError,
+  type Summoner,
+} from "../services/RiotAPIService.js";
+import type { CellValue } from "../services/SpreadsheetService.js";
 import {
   buildOpggUrl,
   formatSummonerDisplayName,
   parseOpggUrl,
-  type SummonerInfo,
 } from "../utils/urlParser.js";
 
-export type GameData = {
-  puuid: string;
-  summonerLevel: number;
-  rankInfo:
-    | {
-        solo: RankInfo | null | undefined;
-        flex: RankInfo | null | undefined;
-      }
-    | {
-        error: string;
-      }
-    | null;
-};
+export interface SpreadsheetService {
+  getCellValue(row: number, column: number): CellValue;
+  setCellValue(row: number, column: number, value: CellValue): void;
+  setHyperlink(row: number, column: number, url: string, label?: string): void;
+}
+
+export interface RiotAPIService {
+  getAccountPuuid(
+    gameName: string,
+    tagLine: string,
+  ): Promise<string | RiotAPIError>;
+  getSummonerLevel(puuid: string): Promise<number | RiotAPIError>;
+  getRankInfo(puuid: string): Promise<RankInfo | RiotAPIError>;
+}
 
 /**
  * フォーム送信を処理するハンドラークラス
  * ビジネスロジックの調整役として機能
  */
 export class FormSubmissionHandler {
-  spreadsheet: SpreadsheetService | MockSpreadsheetService;
-  riotAPI: RiotAPIService | MockRiotAPIService;
+  spreadsheet: SpreadsheetService;
+  riotAPI: RiotAPIService;
   /**
-   * @param {SpreadsheetService | MockSpreadsheetService} spreadsheetService - スプレッドシート操作サービス
-   * @param {RiotAPIService | MockRiotAPIService} riotAPIService - Riot API通信サービス
+   * @param spreadsheetService - スプレッドシート操作サービス
+   * @param riotAPIService - Riot API通信サービス
    */
   constructor(
-    spreadsheetService: SpreadsheetService | MockSpreadsheetService,
-    riotAPIService: RiotAPIService | MockRiotAPIService,
+    spreadsheetService: SpreadsheetService,
+    riotAPIService: RiotAPIService,
   ) {
     this.spreadsheet = spreadsheetService;
     this.riotAPI = riotAPIService;
@@ -46,30 +47,31 @@ export class FormSubmissionHandler {
 
   /**
    * フォーム送信イベントを処理
-   * @param {Object} formEvent - Google Formsのイベントオブジェクト
+   * @param row - 処理中の回答の行番号
    */
-  async handle(formEvent: any) {
+  async handle(row: number) {
     try {
-      const lastRow =
-        formEvent?.range?.getRow?.() || this.spreadsheet.getLastRow();
-
       // 1. フォームデータの取得と解析
-      const formData = this.extractFormData(lastRow);
+      const formData = this.extractFormData(row);
 
       // 2. OPGG URLの解析とクレンジング
-      const summonerInfo = this.processSummonerInfo(formData.opggUrl, lastRow);
-      if (!summonerInfo) {
+      const opggUrl = this.parseOpggUrl(formData.opggUrl, row);
+      if (opggUrl === undefined) {
         return; // エラーは既にシートに記録済み
       }
 
-      // 3. Riot APIからデータ取得
-      const gameData = await this.fetchGameData(summonerInfo, lastRow);
-      if (!gameData) {
+      // 3. Riot APIからデータ取得・基礎データを書き込み
+      const summoner = await this.fetchSummoner(
+        opggUrl.summonerName,
+        opggUrl.tagLine,
+        row,
+      );
+      if (summoner === undefined) {
         return; // エラーは既にシートに記録済み
       }
 
-      // 4. データをシートに書き込み
-      this.writeGameDataToSheet(gameData, lastRow);
+      // 4. ランクデータをシートに書き込み
+      this.writeRankData(summoner, row);
 
       // 5. マッチ履歴処理
       // Riot APIでロールのプレイ回数集計Map
@@ -95,163 +97,148 @@ export class FormSubmissionHandler {
 
   /**
    * フォームデータを抽出
-   * @private
    */
-  extractFormData(row: number) {
+  extractFormData(row: number): { role: string; opggUrl: string } {
     return {
-      role: this.spreadsheet.getCellValue(row, COLUMN_INDEXES.ROLE),
-      opggUrl: this.spreadsheet.getCellValue(row, COLUMN_INDEXES.OPGG_URL),
+      role: String(this.spreadsheet.getCellValue(row, COLUMN_INDEXES.ROLE)),
+      opggUrl: String(
+        this.spreadsheet.getCellValue(row, COLUMN_INDEXES.OPGG_URL),
+      ),
     };
   }
 
   /**
-   * サモナー情報を処理
-   * @private
+   * URLからサモナー情報を取得
    */
-  processSummonerInfo(opggUrl: string, row: number) {
-    try {
-      // URLを解析
-      const parsedOpggInfo = parseOpggUrl(opggUrl);
-      if (!parsedOpggInfo) {
-        throw new Error("OPGG URLの解析に失敗しました。");
-      }
-      return parsedOpggInfo;
-    } catch {
+  parseOpggUrl(opggUrl: string, row: number) {
+    // URLを解析
+    const parsedOpggInfo = parseOpggUrl(opggUrl);
+    if (!parsedOpggInfo) {
       this.spreadsheet.setCellValue(
         row,
         COLUMN_INDEXES.PUUID,
         "Err: OPGG URLの解析に失敗しました。",
       );
-      return null;
+      return;
     }
+    return parsedOpggInfo;
   }
 
   /**
-   * ゲームデータを取得
-   * @private
+   * APIからサモナーデータを取得
    */
-  async fetchGameData(summonerInfo: SummonerInfo, row: number) {
-    let puuid: string;
-    try {
-      puuid = await this.riotAPI.getAccountPuuid(
-        summonerInfo.summonerName,
-        summonerInfo.tagLine,
-      );
-
-      // アカウントの存在が確認できたので
-      // PUUIDを設定
-      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, puuid);
-
-      // クレンジングしたURLをハイパーリンクとして設定
-      const cleanedUrl = buildOpggUrl(
-        summonerInfo.summonerName,
-        summonerInfo.tagLine,
-      );
-      this.spreadsheet.setHyperlink(row, COLUMN_INDEXES.OPGG_URL, cleanedUrl);
-
-      // コピペ用のサモナー名を設定
-      const displayName = formatSummonerDisplayName(
-        summonerInfo.summonerName,
-        summonerInfo.tagLine,
-      );
+  async fetchSummoner(
+    gameName: string,
+    tagLine: string,
+    row: number,
+  ): Promise<Summoner | undefined> {
+    // PUUIDを取得
+    const puuid = await this.riotAPI.getAccountPuuid(gameName, tagLine);
+    if (puuid instanceof RiotAPIError) {
+      // アカウントが存在しなかった
+      const error = puuid;
       this.spreadsheet.setCellValue(
         row,
-        COLUMN_INDEXES.SUMMONER_NAME,
-        displayName,
+        COLUMN_INDEXES.PUUID,
+        `Err: Riotアカウントの問い合わせに失敗しました。${error.message}`,
       );
-    } catch (e) {
-      if (e instanceof RiotAPIException) {
-        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, e.message);
-      }
-      return null;
+      return;
     }
 
-    let summonerLevel: number;
-    try {
-      summonerLevel = await this.riotAPI.getSummonerLevel(puuid);
-      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, summonerLevel);
-    } catch (e) {
-      if (e instanceof RiotAPIException) {
-        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, e.message);
-      }
-      return null;
+    // アカウントの存在が確認できたのでPUUIDを設定
+    this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, puuid);
+
+    // クレンジングしたURLをハイパーリンクとして設定
+    const cleanedUrl = buildOpggUrl(gameName, tagLine);
+    this.spreadsheet.setHyperlink(row, COLUMN_INDEXES.OPGG_URL, cleanedUrl);
+
+    // コピペ用のサモナー名を設定
+    const displayName = formatSummonerDisplayName(gameName, tagLine);
+    this.spreadsheet.setCellValue(
+      row,
+      COLUMN_INDEXES.SUMMONER_NAME,
+      displayName,
+    );
+
+    // サモナーレベルを取得
+    const summonerLevel = await this.riotAPI.getSummonerLevel(puuid);
+    if (summonerLevel instanceof RiotAPIError) {
+      const error = summonerLevel;
+      this.spreadsheet.setCellValue(
+        row,
+        COLUMN_INDEXES.LEVEL,
+        `Err: サモナーレベルの取得に失敗しました。${error.message}`,
+      );
+      return;
     }
 
-    // ランク情報を取得（レベル30以上の場合）
-    let rankInfo = null;
-    if (summonerLevel >= 30) {
-      try {
-        rankInfo = await this.riotAPI.getRankInfo(puuid);
-      } catch (e) {
-        if (e instanceof RiotAPIException) {
-          // ランク情報取得エラーは後で処理
-          rankInfo = { error: e.message };
-        }
-      }
-    }
+    // サモナーレベルを設定
+    this.spreadsheet.setCellValue(row, COLUMN_INDEXES.LEVEL, summonerLevel);
 
     return {
+      gameName,
+      tagLine,
       puuid,
       summonerLevel,
-      rankInfo,
     };
   }
 
   /**
-   * ゲームデータをシートに書き込み
-   * @private
+   * ランクデータをシートに書き込み
    */
-  writeGameDataToSheet(gameData: GameData, row: number) {
-    // サモナーレベルを記録
-    this.spreadsheet.setCellValue(
-      row,
-      COLUMN_INDEXES.LEVEL,
-      gameData.summonerLevel,
-    );
+  async writeRankData(summoner: Summoner, row: number) {
+    if (summoner.summonerLevel < 30) {
+      this.spreadsheet.setCellValue(
+        row,
+        COLUMN_INDEXES.SOLO_RANK,
+        "レベル30未満",
+      );
+      this.spreadsheet.setCellValue(
+        row,
+        COLUMN_INDEXES.FLEX_RANK,
+        "レベル30未満",
+      );
+      return;
+    }
 
-    // ランク情報を記録（レベル30以上の場合）
-    if (gameData.summonerLevel >= 30) {
-      // デフォルト値を設定
-      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, "情報なし");
-      this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, "情報なし");
+    // ランク情報を取得
+    const rankInfo = await this.riotAPI.getRankInfo(summoner.puuid);
+    if (rankInfo instanceof RiotAPIError) {
+      const error = rankInfo;
+      this.spreadsheet.setCellValue(
+        row,
+        COLUMN_INDEXES.SOLO_RANK,
+        `Err: ランクの取得に失敗しました。${error.message}`,
+      );
+      this.spreadsheet.setCellValue(
+        row,
+        COLUMN_INDEXES.FLEX_RANK,
+        `Err: ランクの取得に失敗しました。${error.message}`,
+      );
+      return;
+    }
 
-      if (gameData.rankInfo && !("error" in gameData.rankInfo)) {
-        // ソロランク
-        const soloRankText = gameData.rankInfo.solo
-          ? `${gameData.rankInfo.solo.tier} ${gameData.rankInfo.solo.rank}`
-          : "アンランク";
-        this.spreadsheet.setCellValue(
-          row,
-          COLUMN_INDEXES.SOLO_RANK,
-          soloRankText,
-        );
+    // デフォルト値を設定
+    this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, "アンランク");
+    this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, "アンランク");
 
-        // フレックスランク
-        const flexRankText = gameData.rankInfo.flex
-          ? `${gameData.rankInfo.flex.tier} ${gameData.rankInfo.flex.rank}`
-          : "アンランク";
-        this.spreadsheet.setCellValue(
-          row,
-          COLUMN_INDEXES.FLEX_RANK,
-          flexRankText,
-        );
-      } else if (gameData.rankInfo?.error) {
-        // API呼び出しに失敗した場合
-        this.spreadsheet.setCellValue(
-          row,
-          COLUMN_INDEXES.SOLO_RANK,
-          gameData.rankInfo.error,
-        );
-        this.spreadsheet.setCellValue(
-          row,
-          COLUMN_INDEXES.FLEX_RANK,
-          gameData.rankInfo.error,
-        );
-      } else {
-        // rankInfoがnullの場合（レベル30未満）
-        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SOLO_RANK, "");
-        this.spreadsheet.setCellValue(row, COLUMN_INDEXES.FLEX_RANK, "");
-      }
+    if (rankInfo.solo) {
+      // ソロランク
+      const soloRankText = `${rankInfo.solo.tier} ${rankInfo.solo.rank}`;
+      this.spreadsheet.setCellValue(
+        row,
+        COLUMN_INDEXES.SOLO_RANK,
+        soloRankText,
+      );
+    }
+    if (rankInfo.flex) {
+      // フレックスランク
+      const flexRankText = `${rankInfo.flex.tier} ${rankInfo.flex.rank}`;
+      this.spreadsheet.setCellValue(
+        row,
+        COLUMN_INDEXES.FLEX_RANK,
+        flexRankText,
+      );
     }
   }
 

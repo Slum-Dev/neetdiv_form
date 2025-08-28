@@ -1,12 +1,12 @@
 import { API_ENDPOINTS } from "../config/constants.js";
-import { RiotAPIException } from "../utils/RiotAPIException.js";
+import type { RiotAPIService } from "../handlers/FormSubmissionHandler.js";
 
-export type RankInfo = {
+type LeagueEntryDTO = {
   leagueId: string;
-  queueType: string;
+  queueType: "RANKED_SOLO_5x5" | "RANKED_FLEX_SR" | (string & {});
   tier: string;
   rank: string;
-  summonerId: string;
+  puuid: string;
   leaguePoints: number;
   wins: number;
   losses: number;
@@ -16,139 +16,160 @@ export type RankInfo = {
   hotStreak: boolean;
 };
 
+export type QueueSummary = Pick<LeagueEntryDTO, "tier" | "rank">;
+
+export type RankInfo = {
+  solo?: QueueSummary;
+  flex?: QueueSummary;
+};
+
+export type Summoner = {
+  puuid: string;
+  summonerLevel: number;
+  gameName: string;
+  tagLine: string;
+};
+
+export class RiotAPIError extends Error {
+  constructor(message: unknown, cause?: unknown) {
+    const msg = cause ? `${message}: ${cause}` : message;
+    super(`${msg}`);
+    this.name = "RiotAPIError";
+  }
+}
+
 /**
  * Riot APIとの通信を管理するサービスクラス
  */
-export class RiotAPIService {
+export class RiotAPIServiceImpl implements RiotAPIService {
   /**
-   * @param {string} apiKey - Riot API アクセストークン
+   * @param apiKey - Riot API アクセストークン
    */
-  constructor(private apiKey: string) {
-    this.apiKey = apiKey;
-  }
+  constructor(private apiKey: string) {}
 
   /**
    * Riot APIトークンを乗せてfetch
    * 200ならJSON.parseして返す
-   * 200以外は例外をthrowする
-   * @private
-   * @template T
-   * @param {"get" | "delete" | "patch" | "post" | "put"} method
-   * @param {string} url
-   * @throws {Error} Response_Code with cause: Riot_API_Response_JSON_Object
-   * @returns {Promise<T>}
+   * 200以外の例外は必ずRiotAPIErrorとして返す
+   * @param method
+   * @param url
+   * @returns
    */
-  async fetch(method: GoogleAppsScript.URL_Fetch.HttpMethod, url: string) {
-    const response = await UrlFetchApp.fetch(url, {
-      method,
-      headers: {
-        "X-Riot-Token": this.apiKey,
-      },
-      muteHttpExceptions: true,
-    });
+  async fetch<T>(
+    method: GoogleAppsScript.URL_Fetch.HttpMethod,
+    url: string,
+  ): Promise<T | RiotAPIError> {
+    try {
+      const response = UrlFetchApp.fetch(url, {
+        method,
+        headers: {
+          "X-Riot-Token": this.apiKey,
+        },
+        muteHttpExceptions: true,
+      });
 
-    const responseCode = response.getResponseCode();
-    const responseBody = JSON.parse(response.getContentText());
+      const responseCode = response.getResponseCode();
+      const responseBody = JSON.parse(response.getContentText());
 
-    if (responseCode !== 200) {
-      throw new Error(responseCode.toString(), { cause: responseBody });
+      if (responseCode !== 200) {
+        const errorBody = responseBody as { status?: { message?: string } };
+        const cause = errorBody.status?.message ?? "Unknown";
+        return new RiotAPIError(responseCode, cause);
+      }
+
+      return responseBody as T;
+    } catch (e) {
+      return new RiotAPIError(e);
     }
-
-    return responseBody;
   }
 
   /**
    * GET リクエストのショートハンド
-   * @private
-   * @param {string} url
-   * @throws {Error}
-   * @returns {Promise<any>}
    */
-  async get(url: string) {
+  async get<T>(url: string): Promise<T | RiotAPIError> {
     return this.fetch("get", url);
   }
 
   /**
    * アカウント情報からPUUIDを取得
-   * @param {string} gameName - ゲーム内名（例：若干ワース）
-   * @param {string} tagLine - タグライン（例：k4sen）
-   * @throws {RiotAPIException}
-   * @returns {Promise<string>} PUUID
+   * @param gameName - ゲーム内名（例：若干ワース）
+   * @param tagLine - タグライン（例：k4sen）
+   * @returns PUUID
    */
-  async getAccountPuuid(gameName: string, tagLine: string): Promise<string> {
-    try {
-      const url = `${API_ENDPOINTS.BASE_URL_ASIA}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
-      const account = await this.get(url);
-      return account?.puuid;
-    } catch (e: unknown) {
-      const cause =
-        e instanceof Error && "cause" in e ? (e as any).cause : undefined;
-      throw new RiotAPIException(
-        "Riotアカウントの問い合わせに失敗しました。",
-        cause,
-      );
+  async getAccountPuuid(
+    gameName: string,
+    tagLine: string,
+  ): Promise<string | RiotAPIError> {
+    const url = `${API_ENDPOINTS.BASE_URL_ASIA}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
+    const account = await this.get<{ puuid: string }>(url);
+    if (account instanceof RiotAPIError) {
+      return account;
     }
+    return account.puuid;
   }
 
   /**
    * PUUIDからサモナーレベルを取得
-   * @param {string} puuid - プレイヤーのPUUID
-   * @throws {RiotAPIException}
-   * @returns {Promise<number>} サモナーレベル
+   * @param puuid - プレイヤーのPUUID
+   * @returns サモナーレベル
    */
-  async getSummonerLevel(puuid: string) {
-    try {
-      const url = `${API_ENDPOINTS.BASE_URL_JP}/lol/summoner/v4/summoners/by-puuid/${puuid}`;
-      const summoner = await this.get(url);
-      return summoner?.summonerLevel;
-    } catch (e) {
-      const cause =
-        e instanceof Error && "cause" in e ? (e as any).cause : undefined;
-      throw new RiotAPIException("サモナーレベルの取得に失敗しました。", cause);
+  async getSummonerLevel(puuid: string): Promise<number | RiotAPIError> {
+    const url = `${API_ENDPOINTS.BASE_URL_JP}/lol/summoner/v4/summoners/by-puuid/${puuid}`;
+    const summoner = await this.get<{ summonerLevel: number }>(url);
+    if (summoner instanceof RiotAPIError) {
+      return summoner;
     }
+    return summoner.summonerLevel;
   }
 
   /**
    * PUUIDからランク情報を取得
-   * @param {string} puuid - プレイヤーのPUUID
-   * @throws {RiotAPIException}
-   * @returns {Promise<{solo?: RankInfo, flex?: RankInfo}>} ランク情報
+   * @param puuid - プレイヤーのPUUID
+   * @returns ランク情報
    */
-  async getRankInfo(puuid: string) {
-    try {
-      const url = `${API_ENDPOINTS.BASE_URL_JP}/lol/league/v4/entries/by-puuid/${puuid}`;
-      const ranks: RankInfo[] = await this.get(url);
-
-      return {
-        solo: ranks.find((e) => e.queueType === "RANKED_SOLO_5x5"),
-        flex: ranks.find((e) => e.queueType === "RANKED_FLEX_SR"),
-      };
-    } catch (e) {
-      const cause =
-        e instanceof Error && "cause" in e ? (e as any).cause : undefined;
-      throw new RiotAPIException("ランクの取得に失敗しました。", cause);
+  async getRankInfo(puuid: string): Promise<RankInfo | RiotAPIError> {
+    const url = `${API_ENDPOINTS.BASE_URL_JP}/lol/league/v4/entries/by-puuid/${puuid}`;
+    const ranks = await this.get<LeagueEntryDTO[]>(url);
+    if (ranks instanceof RiotAPIError) {
+      return ranks;
     }
+
+    const rankInfo: RankInfo = {};
+    const solo = ranks.find((e) => e.queueType === "RANKED_SOLO_5x5");
+    const flex = ranks.find((e) => e.queueType === "RANKED_FLEX_SR");
+    if (solo !== undefined) {
+      rankInfo.solo = solo;
+    }
+    if (flex !== undefined) {
+      rankInfo.flex = flex;
+    }
+
+    return rankInfo;
   }
 
-  /**
-   * マッチIDリストを取得
-   * @param {string} puuid - プレイヤーのPUUID
-   * @param {number} [start=0] - 開始インデックス
-   * @param {number} [count=20] - 取得件数
-   * @returns {Promise<string[] | undefined>} マッチIDリスト または undefined
-   */
-  async getMatchIds(puuid: string, start: number = 0, count: number = 20) {
-    const url = `${API_ENDPOINTS.BASE_URL_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
-    return this.get(url);
-  }
+  // /**
+  //  * マッチIDリストを取得
+  //  * @param puuid - プレイヤーのPUUID
+  //  * @param [start=0] - 開始インデックス
+  //  * @param [count=20] - 取得件数
+  //  * @returns マッチIDリスト または undefined
+  //  */
+  // async getMatchIds(
+  //   puuid: string,
+  //   start: number = 0,
+  //   count: number = 20,
+  // ): Promise<string[] | RiotAPIError> {
+  //   const url = `${API_ENDPOINTS.BASE_URL_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
+  //   return this.get<string[]>(url);
+  // }
 
-  /**
-   * マッチの詳細情報を取得
-   * @param {string} matchId - マッチID
-   * @returns {Promise<Object | undefined>} マッチ詳細 または undefined
-   */
-  async getMatchDetail(matchId: string) {
-    const url = `${API_ENDPOINTS.BASE_URL_ASIA}/lol/match/v5/matches/${matchId}`;
-    return this.get(url);
-  }
+  // /**
+  //  * マッチの詳細情報を取得
+  //  * @param matchId - マッチID
+  //  * @returns マッチ詳細 または undefined
+  //  */
+  // async getMatchDetail(matchId: string): Promise<MatchDetail | RiotAPIError> {
+  //   const url = `${API_ENDPOINTS.BASE_URL_ASIA}/lol/match/v5/matches/${matchId}`;
+  //   return this.get<MatchDetail>(url);
+  // }
 }

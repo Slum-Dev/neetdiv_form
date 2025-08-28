@@ -1,30 +1,30 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { MockRiotAPIService } from "../__mocks__/RiotAPIService.js";
 import { MockSpreadsheetService } from "../__mocks__/SpreadsheetService.js";
-import {
-  FormSubmissionHandler,
-  type GameData,
-} from "./FormSubmissionHandler.js";
+import { COLUMN_INDEXES } from "../config/constants.js";
+import type { Summoner } from "../services/RiotAPIService.js";
+import { FormSubmissionHandler } from "./FormSubmissionHandler.js";
+
+const createMockedHandler = () => {
+  const mockSpreadsheet = new MockSpreadsheetService();
+  const mockRiotAPI = new MockRiotAPIService();
+  const handler = new FormSubmissionHandler(mockSpreadsheet, mockRiotAPI);
+  return {
+    handler,
+    mockSpreadsheet,
+    mockRiotAPI,
+  };
+};
 
 describe("FormSubmissionHandler", () => {
-  let handler: FormSubmissionHandler;
-  let mockSpreadsheet: MockSpreadsheetService;
-  let mockRiotAPI: MockRiotAPIService;
-
-  beforeEach(() => {
-    mockSpreadsheet = new MockSpreadsheetService();
-    mockRiotAPI = new MockRiotAPIService();
-    handler = new FormSubmissionHandler(mockSpreadsheet, mockRiotAPI);
-  });
-
   describe("handle", () => {
     it("正常なフォーム送信を処理できる", async () => {
       // Arrange
-      mockSpreadsheet.lastRow = 10;
-      mockSpreadsheet.setCellValue(10, 7, "TOP");
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
+      mockSpreadsheet.setCellValue(10, COLUMN_INDEXES.ROLE, "TOP");
       mockSpreadsheet.setCellValue(
         10,
-        8,
+        COLUMN_INDEXES.OPGG_URL,
         "https://www.op.gg/summoners/jp/TestPlayer-JP1",
       );
 
@@ -38,125 +38,144 @@ describe("FormSubmissionHandler", () => {
       };
 
       // Act
-      await handler.handle({});
+      await handler.handle(10);
 
       // Assert
-      expect(mockSpreadsheet.formulas["10,8"]).toBe(
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.OPGG_URL)).toBe(
         '=HYPERLINK("https://op.gg/summoners/jp/TestPlayer-JP1", "https://op.gg/summoners/jp/TestPlayer-JP1")',
       );
-      expect(mockSpreadsheet.getCellValue(10, 10)).toBe("TestPlayer#JP1");
-      expect(mockSpreadsheet.getCellValue(10, 11)).toBe(150);
-      expect(mockSpreadsheet.getCellValue(10, 12)).toBe("GOLD III");
-      expect(mockSpreadsheet.getCellValue(10, 13)).toBe("SILVER I");
-      expect(mockSpreadsheet.getCellValue(10, 14)).toBe("test-puuid-123");
+      expect(
+        mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SUMMONER_NAME),
+      ).toBe("TestPlayer#JP1");
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.LEVEL)).toBe(150);
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SOLO_RANK)).toBe(
+        "GOLD III",
+      );
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.FLEX_RANK)).toBe(
+        "SILVER I",
+      );
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toBe(
+        "test-puuid-123",
+      );
     });
 
     it("存在しないサモナーの場合エラーメッセージを設定", async () => {
       // Arrange
-      mockSpreadsheet.lastRow = 10;
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
       mockSpreadsheet.setCellValue(
         10,
-        8,
+        COLUMN_INDEXES.OPGG_URL,
         "https://www.op.gg/summoners/jp/InvalidPlayer-JP1",
       );
 
-      // MockRiotAPIServiceが例外をthrowするように設定
-      mockRiotAPI.responses = { throwError: true };
+      // MockRiotAPIServiceがエラーを返すように設定
+      mockRiotAPI.responses = { error: true };
 
       // Act
-      await handler.handle({});
+      const result = await handler.handle(10);
 
-      // Assert
-      expect(mockSpreadsheet.getCellValue(10, 14)).toContain("Err:");
+      // Act & Assert
+      expect(result).toBeUndefined();
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toContain(
+        "Err:",
+      );
     });
 
     it("レベル30未満のサモナーはランク情報を取得しない", async () => {
       // Arrange
-      mockSpreadsheet.lastRow = 10;
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
       mockSpreadsheet.setCellValue(
         10,
-        8,
+        COLUMN_INDEXES.OPGG_URL,
         "https://www.op.gg/summoners/jp/NewPlayer-JP1",
       );
 
       mockRiotAPI.responses = {
         puuid: "new-player-puuid",
         summonerLevel: 25,
-        rankInfo: null,
       };
 
       // Act
-      await handler.handle({});
+      await handler.handle(10);
 
       // Assert
-      expect(mockSpreadsheet.getCellValue(10, 11)).toBe(25);
-      expect(mockSpreadsheet.getCellValue(10, 12)).toBe("");
-      expect(mockSpreadsheet.getCellValue(10, 13)).toBe("");
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.LEVEL)).toBe(25);
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SOLO_RANK)).toBe(
+        "レベル30未満",
+      );
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.FLEX_RANK)).toBe(
+        "レベル30未満",
+      );
     });
 
     it("アンランクのサモナーを適切に処理", async () => {
       // Arrange
-      mockSpreadsheet.lastRow = 10;
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
       mockSpreadsheet.setCellValue(
         10,
-        8,
+        COLUMN_INDEXES.OPGG_URL,
         "https://www.op.gg/summoners/jp/UnrankedPlayer-JP1",
       );
 
       mockRiotAPI.responses = {
         puuid: "unranked-puuid",
         summonerLevel: 50,
-        rankInfo: {
-          solo: null,
-          flex: null,
-        },
+        rankInfo: {},
       };
 
       // Act
-      await handler.handle({});
+      await handler.handle(10);
 
       // Assert
-      expect(mockSpreadsheet.getCellValue(10, 12)).toBe("アンランク");
-      expect(mockSpreadsheet.getCellValue(10, 13)).toBe("アンランク");
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SOLO_RANK)).toBe(
+        "アンランク",
+      );
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.FLEX_RANK)).toBe(
+        "アンランク",
+      );
     });
   });
 
-  describe("processSummonerInfo", () => {
+  describe("parseOpggUrl", () => {
     it("OPGG URLを正しく解析してサモナー情報を返す", () => {
       // Arrange
+      const { handler } = createMockedHandler();
       const url = "https://www.op.gg/summoners/jp/TestPlayer-JP1/champions";
 
       // Act
-      const result = handler.processSummonerInfo(url, 10);
+      const result = handler.parseOpggUrl(url, 10);
 
       // Assert
       expect(result).toEqual({
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
-    it("無効なURLの場合エラーを設定してnullを返す", () => {
+    it("無効なURLの場合エラーを設定してundefinedを返す", () => {
       // Arrange
+      const { handler, mockSpreadsheet } = createMockedHandler();
       const url = ""; // 空文字は無効なURLとしてエラーになる
 
       // Act
-      const result = handler.processSummonerInfo(url, 10);
+      const result = handler.parseOpggUrl(url, 10);
 
       // Assert
-      expect(result).toBeNull();
-      expect(mockSpreadsheet.getCellValue(10, 14)).toContain("Err:");
+      expect(result).toBeUndefined();
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toContain(
+        "Err:",
+      );
     });
 
     it("日本語を含むサモナー名を正しくデコード", () => {
       // Arrange
+      const { handler } = createMockedHandler();
       const url =
         "https://www.op.gg/summoners/jp/%E3%83%86%E3%82%B9%E3%83%88-JP1";
 
       // Act
-      const result = handler.processSummonerInfo(url, 10);
+      const result = handler.parseOpggUrl(url, 10);
 
       // Assert
       expect(result?.summonerName).toBe("テスト");
@@ -164,196 +183,179 @@ describe("FormSubmissionHandler", () => {
     });
   });
 
-  describe("fetchGameData", () => {
+  describe("fetchSummoner", () => {
     it("全てのAPIデータを正常に取得", async () => {
       // Arrange
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
       mockRiotAPI.responses = {
         puuid: "test-puuid",
         summonerLevel: 100,
         rankInfo: {
           solo: { tier: "DIAMOND", rank: "IV" },
-          flex: null,
         },
       };
 
       // Act
-      const result = await handler.fetchGameData(
-        {
-          summonerName: "Test",
-          tagLine: "JP1",
-          region: "jp",
-          cleanedUrl: "https://op.gg/summoners/jp/Test-JP1",
-        },
-        10,
-      );
+      const result = await handler.fetchSummoner("Test", "JP1", 10);
 
       // Assert
-      expect(result).toEqual({
+      expect(result).toEqual<Summoner>({
         puuid: "test-puuid",
         summonerLevel: 100,
-        rankInfo: {
-          solo: { tier: "DIAMOND", rank: "IV" },
-          flex: null,
-        },
+        gameName: "Test",
+        tagLine: "JP1",
       });
-      expect(mockSpreadsheet.getCellValue(10, 10)).toBe("Test#JP1");
+      expect(
+        mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SUMMONER_NAME),
+      ).toBe("Test#JP1");
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.LEVEL)).toBe(100);
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toBe(
+        "test-puuid",
+      );
     });
 
-    it("PUUIDが取得できない場合はnullを返す", async () => {
+    it("PUUIDが取得できない場合はundefinedを返す", async () => {
       // Arrange
-      mockRiotAPI.responses = { throwError: true };
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
+      mockRiotAPI.responses = { error: true };
 
       // Act
-      const result = await handler.fetchGameData(
-        {
-          summonerName: "Invalid",
-          tagLine: "JP1",
-          region: "jp",
-          cleanedUrl: "https://op.gg/summoners/jp/Invalid-JP1",
-        },
-        10,
-      );
+      const result = await handler.fetchSummoner("Invalid", "JP1", 10);
 
       // Assert
-      expect(result).toBeNull();
-      expect(mockSpreadsheet.getCellValue(10, 14)).toContain("Err:");
+      expect(result).toBeUndefined();
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toContain(
+        "Err:",
+      );
     });
 
-    it("サモナーレベルが取得できない場合はnullを返す", async () => {
+    it("サモナーレベルが取得できない場合はundefinedを返す", async () => {
       // Arrange
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
       mockRiotAPI.responses = {
         puuid: "test-puuid",
-        throwError: true,
-        summonerLevel: undefined, // getSummonerLevelで例外をthrowさせる
+        error: true,
       };
 
       // Act
-      const result = await handler.fetchGameData(
-        {
-          summonerName: "Test",
-          tagLine: "JP1",
-          region: "jp",
-          cleanedUrl: "https://op.gg/summoners/jp/Test-JP1",
-        },
-        10,
-      );
+      const result = await handler.fetchSummoner("Test", "JP1", 10);
 
       // Assert
-      expect(result).toBeNull();
-      expect(mockSpreadsheet.getCellValue(10, 11)).toContain("Err:");
+      expect(result).toBeUndefined();
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.LEVEL)).toContain(
+        "Err:",
+      );
     });
   });
 
-  describe("writeGameDataToSheet", () => {
-    it("ランク情報を含む全データをシートに書き込む", () => {
+  describe("writeRankData", () => {
+    it("ランク情報をシートに書き込む", async () => {
       // Arrange
-      const gameData: GameData = {
-        puuid: "test-puuid",
-        summonerLevel: 150,
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
+      mockRiotAPI.responses = {
         rankInfo: {
-          solo: {
-            tier: "PLATINUM",
-            rank: "II",
-            leagueId: "",
-            queueType: "",
-            summonerId: "",
-            leaguePoints: 0,
-            wins: 0,
-            losses: 0,
-            veteran: false,
-            inactive: false,
-            freshBlood: false,
-            hotStreak: false,
-          },
-          flex: {
-            tier: "GOLD",
-            rank: "I",
-            leagueId: "",
-            queueType: "",
-            summonerId: "",
-            leaguePoints: 0,
-            wins: 0,
-            losses: 0,
-            veteran: false,
-            inactive: false,
-            freshBlood: false,
-            hotStreak: false,
-          },
+          solo: { tier: "PLATINUM", rank: "II" },
+          flex: { tier: "GOLD", rank: "I" },
         },
       };
 
       // Act
-      handler.writeGameDataToSheet(gameData, 10);
+      await handler.writeRankData(
+        {
+          puuid: "test-puuid",
+          summonerLevel: 150,
+          gameName: "",
+          tagLine: "",
+        },
+        10,
+      );
 
       // Assert
-      expect(mockSpreadsheet.getCellValue(10, 11)).toBe(150);
-      expect(mockSpreadsheet.getCellValue(10, 12)).toBe("PLATINUM II");
-      expect(mockSpreadsheet.getCellValue(10, 13)).toBe("GOLD I");
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SOLO_RANK)).toBe(
+        "PLATINUM II",
+      );
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.FLEX_RANK)).toBe(
+        "GOLD I",
+      );
     });
 
-    it("レベル30未満の場合ランク情報を書き込まない", () => {
+    it("レベル30未満の場合「レベル30未満」と書き込む", async () => {
       // Arrange
-      const gameData = {
-        puuid: "test-puuid",
-        summonerLevel: 25,
-        rankInfo: null,
+      const { handler, mockSpreadsheet } = createMockedHandler();
+
+      // Act
+      await handler.writeRankData(
+        {
+          puuid: "test-puuid",
+          summonerLevel: 25,
+          gameName: "",
+          tagLine: "",
+        },
+        10,
+      );
+
+      // Assert
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SOLO_RANK)).toBe(
+        "レベル30未満",
+      );
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.FLEX_RANK)).toBe(
+        "レベル30未満",
+      );
+    });
+
+    it("ランク取得に失敗した場合エラーメッセージを表示", async () => {
+      // Arrange
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
+      mockRiotAPI.responses = {
+        error: true,
       };
 
       // Act
-      handler.writeGameDataToSheet(gameData, 10);
+      const result = await handler.writeRankData(
+        {
+          puuid: "test-puuid",
+          summonerLevel: 100,
+          gameName: "",
+          tagLine: "",
+        },
+        10,
+      );
 
       // Assert
-      expect(mockSpreadsheet.getCellValue(10, 11)).toBe(25);
-      expect(mockSpreadsheet.getCellValue(10, 12)).toBe("");
-      expect(mockSpreadsheet.getCellValue(10, 13)).toBe("");
+      expect(result).toBeUndefined();
+      expect(
+        mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SOLO_RANK),
+      ).toContain("Err:");
+      expect(
+        mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.FLEX_RANK),
+      ).toContain("Err:");
     });
 
-    it("ランク取得に失敗した場合エラーメッセージを表示", () => {
+    it("片方のみランクを持つ場合を正しく処理", async () => {
       // Arrange
-      const gameData = {
-        puuid: "test-puuid",
-        summonerLevel: 100,
-        rankInfo: { error: "Err: ランクの取得に失敗しました。" },
-      };
-
-      // Act
-      handler.writeGameDataToSheet(gameData, 10);
-
-      // Assert
-      expect(mockSpreadsheet.getCellValue(10, 12)).toContain("Err:");
-      expect(mockSpreadsheet.getCellValue(10, 13)).toContain("Err:");
-    });
-
-    it("片方のみランクを持つ場合を正しく処理", () => {
-      // Arrange
-      const gameData: GameData = {
-        puuid: "test-puuid",
-        summonerLevel: 100,
+      const { handler, mockRiotAPI, mockSpreadsheet } = createMockedHandler();
+      mockRiotAPI.responses = {
         rankInfo: {
-          solo: {
-            tier: "GOLD",
-            rank: "III",
-            leagueId: "",
-            queueType: "",
-            summonerId: "",
-            leaguePoints: 0,
-            wins: 0,
-            losses: 0,
-            veteran: false,
-            inactive: false,
-            freshBlood: false,
-            hotStreak: false,
-          },
-          flex: null,
+          solo: { tier: "GOLD", rank: "III" },
         },
       };
+      const summoner: Summoner = {
+        puuid: "test-puuid",
+        summonerLevel: 100,
+        gameName: "",
+        tagLine: "",
+      };
 
       // Act
-      handler.writeGameDataToSheet(gameData, 10);
+      await handler.writeRankData(summoner, 10);
 
       // Assert
-      expect(mockSpreadsheet.getCellValue(10, 12)).toBe("GOLD III");
-      expect(mockSpreadsheet.getCellValue(10, 13)).toBe("アンランク");
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.SOLO_RANK)).toBe(
+        "GOLD III",
+      );
+      expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.FLEX_RANK)).toBe(
+        "アンランク",
+      );
     });
   });
 });

@@ -9,6 +9,5 @@ export default defineConfig({
       exclude: ["src/**/*.test.{js,ts}"],
       reporter: ["text", "html", "lcov"],
     },
-    globals: true,
   },
 });
