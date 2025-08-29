@@ -11,4 +11,7 @@ pre-commit:
     lint-code:
       glob: "*.{ts,js,tsx,jsx}"
       stage_fixed: true
-      run: npx biome check --write --unsafe --error-on-warnings {staged_files}
+      run: npx biome check --write --error-on-warnings {staged_files}
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: npm run typecheck

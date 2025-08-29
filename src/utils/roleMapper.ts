@@ -1,37 +1,26 @@
 /**
  * フォームのロール表記をRiot APIのロール表記に変換するマッピング
  */
-const ROLE_MAP = {
-  TOP: "TOP",
-  JG: "JUNGLE",
-  MID: "MIDDLE",
-  BOT: "BOTTOM",
-  SUP: "UTILITY",
-};
-
-/**
- * Riot APIのロール表記をフォームのロール表記に逆変換するマッピング
- */
-const REVERSE_ROLE_MAP = {
-  TOP: "TOP",
-  JUNGLE: "JG",
-  MIDDLE: "MID",
-  BOTTOM: "BOT",
-  UTILITY: "SUP",
-};
+const ROLE_MAP = new Map<string, string>([
+  ["TOP", "TOP"],
+  ["JG", "JUNGLE"],
+  ["MID", "MIDDLE"],
+  ["BOT", "BOTTOM"],
+  ["SUP", "UTILITY"],
+]);
 
 /**
  * フォームのロール表記をRiot APIのロール表記に変換
  * @param {string} formRole - フォームでのロール（TOP, JG, MID, BOT, SUP）
  * @returns {string} Riot APIでのロール（TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY）
  */
-export function mapFormRoleToAPI(formRole) {
+export function mapFormRoleToAPI(formRole: string | null | undefined) {
   if (!formRole) {
     return "";
   }
 
   const upperRole = formRole.toUpperCase();
-  return ROLE_MAP[upperRole] || formRole;
+  return ROLE_MAP.get(upperRole) || formRole;
 }
 
 /**
@@ -39,13 +28,17 @@ export function mapFormRoleToAPI(formRole) {
  * @param {string} apiRole - Riot APIでのロール
  * @returns {string} フォームでのロール
  */
-export function mapAPIRoleToForm(apiRole) {
+export function mapAPIRoleToForm(apiRole: string | null | undefined) {
   if (!apiRole) {
     return "";
   }
 
   const upperRole = apiRole.toUpperCase();
-  return REVERSE_ROLE_MAP[upperRole] || apiRole;
+  return (
+    Array.from(ROLE_MAP.entries())
+      .find(([, value]) => value === upperRole)?.[0]
+      .toUpperCase() || apiRole
+  );
 }
 
 /**
@@ -53,13 +46,13 @@ export function mapAPIRoleToForm(apiRole) {
  * @param {string} role - 検証するロール
  * @returns {boolean} 有効なロールの場合true
  */
-export function isValidFormRole(role) {
+export function isValidFormRole(role: string | null | undefined) {
   if (!role) {
     return false;
   }
 
   const upperRole = role.toUpperCase();
-  return Object.keys(ROLE_MAP).includes(upperRole);
+  return ROLE_MAP.keys().toArray().includes(upperRole);
 }
 
 /**
@@ -67,13 +60,13 @@ export function isValidFormRole(role) {
  * @param {string} role - 検証するロール
  * @returns {boolean} 有効なAPIロールの場合true
  */
-export function isValidAPIRole(role) {
+export function isValidAPIRole(role: string | null | undefined) {
   if (!role) {
     return false;
   }
 
   const upperRole = role.toUpperCase();
-  return Object.values(ROLE_MAP).includes(upperRole);
+  return ROLE_MAP.values().toArray().includes(upperRole);
 }
 
 /**
@@ -81,7 +74,7 @@ export function isValidAPIRole(role) {
  * @returns {string[]} フォームロールの配列
  */
 export function getAllFormRoles() {
-  return Object.keys(ROLE_MAP);
+  return ROLE_MAP.keys().toArray();
 }
 
 /**
@@ -89,7 +82,7 @@ export function getAllFormRoles() {
  * @returns {string[]} APIロールの配列
  */
 export function getAllAPIRoles() {
-  return Object.values(ROLE_MAP);
+  return ROLE_MAP.values().toArray();
 }
 
 /**
@@ -97,25 +90,25 @@ export function getAllAPIRoles() {
  * @param {string} role - ロール（フォーム形式またはAPI形式）
  * @returns {string} 表示名
  */
-export function getRoleDisplayName(role) {
-  const roleDisplayNames = {
-    TOP: "トップ",
-    JG: "ジャングル",
-    JUNGLE: "ジャングル",
-    MID: "ミッド",
-    MIDDLE: "ミッド",
-    BOT: "ボット",
-    BOTTOM: "ボット",
-    SUP: "サポート",
-    UTILITY: "サポート",
-  };
+export function getRoleDisplayName(role: string | null | undefined) {
+  const roleDisplayNames = new Map<string, string>([
+    ["TOP", "トップ"],
+    ["JG", "ジャングル"],
+    ["JUNGLE", "ジャングル"],
+    ["MID", "ミッド"],
+    ["MIDDLE", "ミッド"],
+    ["BOT", "ボット"],
+    ["BOTTOM", "ボット"],
+    ["SUP", "サポート"],
+    ["UTILITY", "サポート"],
+  ]);
 
   if (!role) {
     return "不明";
   }
 
   const upperRole = role.toUpperCase();
-  return roleDisplayNames[upperRole] || role;
+  return roleDisplayNames.get(upperRole) || role;
 }
 
 /**

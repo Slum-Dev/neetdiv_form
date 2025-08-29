@@ -15,7 +15,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
@@ -27,7 +26,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
@@ -39,7 +37,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
@@ -51,7 +48,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
@@ -59,36 +55,44 @@ describe("urlParser", () => {
       const url = "https://www.op.gg/summoners/jp/TestPlayer-JP1/champions";
       const result = parseOpggUrl(url);
 
-      expect(result.cleanedUrl).toBe(
-        "https://op.gg/summoners/jp/TestPlayer-JP1",
-      );
+      expect(result).toEqual({
+        summonerName: "TestPlayer",
+        tagLine: "JP1",
+        region: "jp",
+      });
     });
 
     it("masteryパスを削除", () => {
       const url = "https://www.op.gg/summoners/jp/TestPlayer-JP1/mastery";
       const result = parseOpggUrl(url);
 
-      expect(result.cleanedUrl).toBe(
-        "https://op.gg/summoners/jp/TestPlayer-JP1",
-      );
+      expect(result).toEqual({
+        summonerName: "TestPlayer",
+        tagLine: "JP1",
+        region: "jp",
+      });
     });
 
     it("ingameパスを削除", () => {
       const url = "https://www.op.gg/summoners/jp/TestPlayer-JP1/ingame";
       const result = parseOpggUrl(url);
 
-      expect(result.cleanedUrl).toBe(
-        "https://op.gg/summoners/jp/TestPlayer-JP1",
-      );
+      expect(result).toEqual({
+        summonerName: "TestPlayer",
+        tagLine: "JP1",
+        region: "jp",
+      });
     });
 
     it("未知のパスを削除", () => {
       const url = "https://www.op.gg/summoners/jp/TestPlayer-JP1/xxxxxxx";
       const result = parseOpggUrl(url);
 
-      expect(result.cleanedUrl).toBe(
-        "https://op.gg/summoners/jp/TestPlayer-JP1",
-      );
+      expect(result).toEqual({
+        summonerName: "TestPlayer",
+        tagLine: "JP1",
+        region: "jp",
+      });
     });
 
     it("クエリパラメータを削除", () => {
@@ -99,7 +103,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
@@ -111,7 +114,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
@@ -123,7 +125,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl: "https://op.gg/summoners/jp/TestPlayer-JP1",
       });
     });
 
@@ -136,8 +137,6 @@ describe("urlParser", () => {
         summonerName: "テスト",
         tagLine: "JP1",
         region: "jp",
-        cleanedUrl:
-          "https://op.gg/summoners/jp/%E3%83%86%E3%82%B9%E3%83%88-JP1",
       });
     });
 
@@ -150,8 +149,6 @@ describe("urlParser", () => {
         summonerName: "TestPlayer",
         tagLine: "テスト",
         region: "jp",
-        cleanedUrl:
-          "https://op.gg/summoners/jp/TestPlayer-%E3%83%86%E3%82%B9%E3%83%88",
       });
     });
 
@@ -163,8 +160,6 @@ describe("urlParser", () => {
         summonerName: "テスト",
         tagLine: "テスト",
         region: "jp",
-        cleanedUrl:
-          "https://op.gg/summoners/jp/%E3%83%86%E3%82%B9%E3%83%88-%E3%83%86%E3%82%B9%E3%83%88",
       });
     });
 
@@ -172,30 +167,30 @@ describe("urlParser", () => {
       const url = "https://www.op.gg/summoners/jp/Test%20Player%23123-αβγ";
       const result = parseOpggUrl(url);
 
-      expect(result.summonerName).toBe("Test Player#123");
-      expect(result.tagLine).toBe("αβγ");
+      expect(result?.summonerName).toBe("Test Player#123");
+      expect(result?.tagLine).toBe("αβγ");
     });
 
     it("タグラインがない場合はデフォルトJP1", () => {
       const url = "https://www.op.gg/summoners/jp/TestPlayer";
       const result = parseOpggUrl(url);
 
-      expect(result.summonerName).toBe("TestPlayer");
-      expect(result.tagLine).toBe("JP1");
+      expect(result?.summonerName).toBe("TestPlayer");
+      expect(result?.tagLine).toBe("JP1");
     });
 
     it("スペースを含むサモナー名", () => {
       const url = "https://www.op.gg/summoners/jp/Test%20Player-KR";
       const result = parseOpggUrl(url);
 
-      expect(result.summonerName).toBe("Test Player");
-      expect(result.tagLine).toBe("KR");
+      expect(result?.summonerName).toBe("Test Player");
+      expect(result?.tagLine).toBe("KR");
     });
 
     it("無効なURLの場合 undefined", () => {
-      expect(parseOpggUrl(null)).toBeUndefined();
       expect(parseOpggUrl("")).toBeUndefined();
-      expect(parseOpggUrl(123)).toBeUndefined();
+      expect(parseOpggUrl("qwer")).toBeUndefined();
+      expect(parseOpggUrl("op.gg/summoners/jp/TestPlayer-JP1")).toBeUndefined();
     });
 
     it("サモナー情報が抽出できない場合 undefined", () => {

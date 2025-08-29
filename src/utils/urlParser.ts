@@ -1,21 +1,15 @@
-/**
- * @typedef OpggUrl
- * @property {string} summonerName  サモナー名
- * @property {string} tagLine       タグライン
- * @property {string} region        リージョン
- * @property {string} cleanedUrl    整形+URLエンコード済みURL
- */
+export type SummonerInfo = {
+  summonerName: string;
+  tagLine: string;
+  region: string;
+};
 
 /**
  * OPGG URLを解析してサモナー情報を抽出
- * @param {string} opggUrl - OPGG URL
- * @returns {OpggUrl | undefined} サモナー情報
+ * @param opggUrl - OPGG URL
+ * @returns サモナー情報
  */
-export function parseOpggUrl(opggUrl) {
-  if (!opggUrl || typeof opggUrl !== "string") {
-    return;
-  }
-
+export function parseOpggUrl(opggUrl: string): SummonerInfo | undefined {
   // オリジンがop.ggかつ "/summoners/<region>/<name>-<tag?>" のようなパスを持つURL
   const urlRegex =
     /^https?:\/\/(?:www\.)?op.gg\/(?:\w+\/)*summoners\/(?<region>\w+)\/(?<name>[^\s#/?-]+)(?:-(?<tag>[^\s#/?]+))?/i;
@@ -39,28 +33,34 @@ export function parseOpggUrl(opggUrl) {
     summonerName,
     tagLine,
     region,
-    cleanedUrl: buildOpggUrl(summonerName, tagLine, region),
   };
 }
 
 /**
  * サモナー名とタグラインから表示名を生成
- * @param {string} summonerName - サモナー名
- * @param {string} tagLine - タグライン
- * @returns {string} 表示名（例：SummonerName#JP1）
+ * @param summonerName - サモナー名
+ * @param tagLine - タグライン
+ * @returns 表示名（例：SummonerName#JP1）
  */
-export function formatSummonerDisplayName(summonerName, tagLine) {
+export function formatSummonerDisplayName(
+  summonerName: string,
+  tagLine: string,
+): string {
   return `${summonerName}#${tagLine}`;
 }
 
 /**
  * OPGG URLを構築
- * @param {string} summonerName - サモナー名
- * @param {string} tagLine - タグライン
- * @param {string} [region='jp'] - リージョン
- * @returns {string} OPGG URL
+ * @param summonerName - サモナー名
+ * @param tagLine - タグライン
+ * @param region - リージョン
+ * @returns OPGG URL
  */
-export function buildOpggUrl(summonerName, tagLine, region = "jp") {
+export function buildOpggUrl(
+  summonerName: string,
+  tagLine: string,
+  region: string = "jp",
+): string {
   const encodedName = encodeURIComponent(summonerName);
   const encodedTag = encodeURIComponent(tagLine);
   return `https://op.gg/summoners/${region}/${encodedName}-${encodedTag}`;
