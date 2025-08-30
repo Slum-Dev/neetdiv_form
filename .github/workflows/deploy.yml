@@ -36,9 +36,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Copy appsscript.json
-        run: cp appsscript.json dist/
-
       - name: Create .clasp.json
         run: bash .github/scripts/setup_clasp.sh
 
