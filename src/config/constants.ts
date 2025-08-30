@@ -12,6 +12,8 @@ export const SHEET_NAME = "フォームの回答 1";
  */
 export const COLUMN_INDEXES = {
   // フォーム入力項目
+  GAME_NANE: 3, // サモナー名
+  TAG_LINE: 4, // サモナーID(タグライン)
   ROLE: 7, // 宣言レーン
   OPGG_URL: 8, // OPGG URL
 

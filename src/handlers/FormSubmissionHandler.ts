@@ -147,6 +147,9 @@ export class FormSubmissionHandler {
 
     // アカウントの存在が確認できたのでPUUIDを設定
     this.spreadsheet.setCellValue(row, COLUMN_INDEXES.PUUID, puuid);
+    // 回答の「サモナー名・サモナーID」に正しい名前をセット
+    this.spreadsheet.setCellValue(row, COLUMN_INDEXES.SUMMONER_NAME, gameName);
+    this.spreadsheet.setCellValue(row, COLUMN_INDEXES.TAG_LINE, tagLine);
 
     // クレンジングしたURLをハイパーリンクとして設定
     const cleanedUrl = buildOpggUrl(gameName, tagLine);
