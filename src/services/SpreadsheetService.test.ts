@@ -303,6 +303,24 @@ describe("MockSpreadsheetService", () => {
     );
   });
 
+  it("セルの検索", () => {
+    const mockService = new MockSpreadsheetService();
+    mockService.setCellValue(1, 2, "one two");
+    mockService.setCellValue(1, 3, "one three");
+    mockService.setCellValue(2, 1, "two one");
+    mockService.setCellValue(2, 3, "two three");
+    mockService.setCellValue(4, 1, "four one");
+    mockService.setCellValue(4, 2, "four two");
+
+    const found = mockService.findCell("two");
+    expect(found).toEqual<{ row: number; column: number }[]>([
+      { row: 1, column: 2 },
+      { row: 2, column: 1 },
+      { row: 2, column: 3 },
+      { row: 4, column: 2 },
+    ]);
+  });
+
   // it("範囲値の設定と取得", () => {
   //   const mockService = new MockSpreadsheetService();
   //   const values = [
