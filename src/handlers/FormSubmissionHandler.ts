@@ -15,6 +15,7 @@ export interface SpreadsheetService {
   getCellValue(row: number, column: number): CellValue;
   setCellValue(row: number, column: number, value: CellValue): void;
   setHyperlink(row: number, column: number, url: string, label?: string): void;
+  findCell(findText: string): { row: number; column: number }[];
 }
 
 export interface RiotAPIService {
@@ -140,7 +141,7 @@ export class FormSubmissionHandler {
       this.spreadsheet.setCellValue(
         row,
         COLUMN_INDEXES.PUUID,
-        `Err: Riotアカウントの問い合わせに失敗しました。${error.message}`,
+        `Err: Riotアカウントの問い合わせに失敗しました。${error}`,
       );
       return;
     }
@@ -170,7 +171,7 @@ export class FormSubmissionHandler {
       this.spreadsheet.setCellValue(
         row,
         COLUMN_INDEXES.LEVEL,
-        `Err: サモナーレベルの取得に失敗しました。${error.message}`,
+        `Err: サモナーレベルの取得に失敗しました。${error}`,
       );
       return;
     }
@@ -211,12 +212,12 @@ export class FormSubmissionHandler {
       this.spreadsheet.setCellValue(
         row,
         COLUMN_INDEXES.SOLO_RANK,
-        `Err: ランクの取得に失敗しました。${error.message}`,
+        `Err: ランクの取得に失敗しました。${error}`,
       );
       this.spreadsheet.setCellValue(
         row,
         COLUMN_INDEXES.FLEX_RANK,
-        `Err: ランクの取得に失敗しました。${error.message}`,
+        `Err: ランクの取得に失敗しました。${error}`,
       );
       return;
     }
