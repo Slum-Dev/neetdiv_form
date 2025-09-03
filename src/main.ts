@@ -30,28 +30,8 @@ function onFormSubmit(e: GoogleAppsScript.Events.SheetsOnFormSubmit) {
       riotAPIService,
     );
     handler.handle(e.range.getRow());
-  } catch (error) {
-    console.error("フォーム処理中にエラーが発生しました:", error);
-    // エラーログをシートに記録することも検討
-    throw error;
-  }
-}
 
-/**
- * 時間主導型トリガーで実行される関数
- */
-function onCron() {
-  try {
-    const apiKey = getApiKey();
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (sheet == null) {
-      throw new Error("シートを取得できませんでした");
-    }
-
-    const spreadsheetService = new SpreadsheetServiceImpl(sheet);
-    const riotAPIService = new RiotAPIServiceImpl(apiKey);
-
+    // 失敗した項目を再取得
     const retryHandler = new FormRetryHandler(
       spreadsheetService,
       riotAPIService,
@@ -65,4 +45,3 @@ function onCron() {
 }
 
 globalThis.onFormSubmit = onFormSubmit;
-globalThis.onCron = onCron;
