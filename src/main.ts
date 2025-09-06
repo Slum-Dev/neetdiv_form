@@ -1,4 +1,5 @@
 import { SHEET_NAME } from "./config/constants.js";
+import { FormRetryHandler } from "./handlers/FormRetryHandler.js";
 import { FormSubmissionHandler } from "./handlers/FormSubmissionHandler.js";
 import { RiotAPIServiceImpl } from "./services/RiotAPIService.js";
 import { SpreadsheetServiceImpl } from "./services/SpreadsheetService.js";
@@ -29,6 +30,13 @@ function onFormSubmit(e: GoogleAppsScript.Events.SheetsOnFormSubmit) {
       riotAPIService,
     );
     handler.handle(e.range.getRow());
+
+    // 失敗した項目を再取得
+    const retryHandler = new FormRetryHandler(
+      spreadsheetService,
+      riotAPIService,
+    );
+    retryHandler.handle();
   } catch (error) {
     console.error("フォーム処理中にエラーが発生しました:", error);
     // エラーログをシートに記録することも検討

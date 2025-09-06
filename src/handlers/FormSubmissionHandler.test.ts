@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MockRiotAPIService } from "../__mocks__/RiotAPIService.js";
 import { MockSpreadsheetService } from "../__mocks__/SpreadsheetService.js";
 import { COLUMN_INDEXES } from "../config/constants.js";
-import type { Summoner } from "../services/RiotAPIService.js";
+import {
+  RiotAPIServiceImpl,
+  type Summoner,
+} from "../services/RiotAPIService.js";
 import { FormSubmissionHandler } from "./FormSubmissionHandler.js";
 
 const createMockedHandler = () => {
@@ -78,6 +81,38 @@ describe("FormSubmissionHandler", () => {
       expect(result).toBeUndefined();
       expect(mockSpreadsheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toContain(
         "Err:",
+      );
+    });
+
+    it('APIがエラーを返したらエラーメッセージとして "RiotAPIError: <ステータスコード>" を含む文字列を設定', async () => {
+      // Arrange
+      const mockSheet = new MockSpreadsheetService();
+      const mockRiotAPI = new RiotAPIServiceImpl("fake-token");
+      const handler = new FormSubmissionHandler(mockSheet, mockRiotAPI);
+      const mockFetch = vi.fn();
+      vi.stubGlobal("UrlFetchApp", {
+        fetch: mockFetch,
+      });
+      const mockResponse = {
+        getResponseCode: () => 429,
+        getContentText: () => JSON.stringify({}),
+      };
+      mockFetch.mockReturnValue(mockResponse);
+
+      mockSheet.setCellValue(
+        10,
+        COLUMN_INDEXES.OPGG_URL,
+        "https://www.op.gg/summoners/jp/TestPlayer-JP1",
+      );
+
+      // Act
+      const result = await handler.handle(10);
+
+      // Act & Assert
+      expect(result).toBeUndefined();
+      expect(mockSheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toMatch(/^Err:/);
+      expect(mockSheet.getCellValue(10, COLUMN_INDEXES.PUUID)).toContain(
+        "RiotAPIError: 429",
       );
     });
 

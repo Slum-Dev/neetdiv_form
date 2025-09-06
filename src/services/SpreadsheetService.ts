@@ -58,6 +58,16 @@ export class SpreadsheetServiceImpl implements SpreadsheetService {
     this.setCellValue(row, column, formula);
   }
 
+  /**
+   * 指定の文字列を含むセルを検索
+   * @param findText 検索する文字列
+   */
+  findCell(findText: string): { row: number; column: number }[] {
+    const finder = this.sheet.createTextFinder(findText);
+    const cells = finder.findAll();
+    return cells.map((c) => ({ row: c.getRow(), column: c.getColumn() }));
+  }
+
   // /**
   //  * 複数のセルの値を一括で取得
   //  * @param row - 開始行番号（1始まり）
