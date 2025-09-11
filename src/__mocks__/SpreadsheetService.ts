@@ -47,6 +47,20 @@ export class MockSpreadsheetService implements SpreadsheetService {
     this.setCellValue(row, column, `=HYPERLINK("${url}", "${label || url}")`);
   }
 
+  findCell(findText: string): { row: number; column: number }[] {
+    const result: { row: number; column: number }[] = [];
+    for (const [rowIdx, _row] of this.data.entries()) {
+      if (_row === undefined) continue; // emptyチェック
+      for (const [colIdx, cellValue] of _row.entries()) {
+        if (cellValue === undefined) continue; // emptyチェック
+        if (String(cellValue).includes(findText)) {
+          result.push({ row: rowIdx + 1, column: colIdx + 1 });
+        }
+      }
+    }
+    return result;
+  }
+
   // getRangeValues(
   //   row: number,
   //   column: number,
