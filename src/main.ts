@@ -1,4 +1,4 @@
-import { SHEET_NAME } from "./config/constants.js";
+import { FORM_SHEET_NAME } from "./config/constants.js";
 import { FormRetryHandler } from "./handlers/FormRetryHandler.js";
 import { FormSubmissionHandler } from "./handlers/FormSubmissionHandler.js";
 import { RiotAPIServiceImpl } from "./services/RiotAPIService.js";
@@ -15,7 +15,7 @@ function onFormSubmit(e: GoogleAppsScript.Events.SheetsOnFormSubmit) {
     // 依存性の初期化
     const apiKey = getApiKey();
     const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FORM_SHEET_NAME);
     if (sheet == null) {
       throw new Error("シートを取得できませんでした");
     }
