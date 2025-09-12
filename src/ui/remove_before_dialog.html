@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <body>
+    <p>しきい値となるタイムスタンプ（例: 2025/08/21 9:05:03）</p>
+    <input type="text" id="inputBox" value="<?= defaultValue ?>" style="width:100%;" />
+    <div style="margin-top: 12px;">
+      <button type="button" onclick="handleSubmit()">実行</button>
+      <button type="button" onclick="google.script.host.close()">キャンセル</button>
+    </div>
+
+    <script>
+      function handleSubmit() {
+        const value = document.getElementById('inputBox').value;
+        google.script.run
+          .withSuccessHandler(function (deletedCount) {
+            alert(deletedCount + ' 行を削除しました');
+            google.script.host.close();
+          })
+          .withFailureHandler(function (err) {
+            alert('エラー: ' + err.message);
+          })
+          .sendToRemoveDataByDatetime(value);
+      }
+    </script>
+  </body>
+</html>
