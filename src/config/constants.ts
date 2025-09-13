@@ -5,12 +5,15 @@
 /**
  * Google Sheetsの設定
  */
-export const SHEET_NAME = "フォームの回答 1";
+export const FORM_SHEET_NAME = "フォームの回答 1";
 
 /**
  * スプレッドシートの列インデックス（1始まり）
  */
 export const COLUMN_INDEXES = {
+  // フォーム自動生成項目
+  TIMESTAMP: 0,
+
   // フォーム入力項目
   GAME_NANE: 3, // サモナー名
   TAG_LINE: 4, // サモナーID(タグライン)
@@ -27,6 +30,18 @@ export const COLUMN_INDEXES = {
   // 将来の拡張用（マッチ履歴）
   MATCH_COUNT: 15, // 宣言レーンのマッチ数
   CHAMPION_POOL_START: 16, // チャンピオンプール開始列
+
+  // 各選出シートで選択したニート
+  DRAFT_SELECTED: 15,
+} as const;
+
+/**
+ * スプレッドシートの行インデックス（1始まり）
+ */
+export const ROW_INDEXES = {
+  // データが登録される最初の行
+  DRAFT_FIRST_ROW: 4,
+  FORM_FIRST_ROW: 4,
 } as const;
 
 /**
@@ -128,3 +143,5 @@ export const MATCH_HISTORY_CONFIG = {
   MAX_COUNT: 100,
   START_INDEX: 0,
 } as const;
+
+export const DRAFT_SHEET_NAME = ["TOP", "JG", "MID", "BOT", "SUP"] as const;

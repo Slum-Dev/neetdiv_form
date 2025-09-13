@@ -5,10 +5,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --outfile=dist/Code.gs --format=esm",
+    "build": "rimraf dist && esbuild src/main.ts --bundle --outfile=dist/Code.gs --format=esm && cpx src/ui/**/*.html dist && cpx appsscript.json dist",
     "build:watch": "npm run build -- --watch",
     "build:dev": "npm run build -- --sourcemap",
-    "format": "prettier -w **/*.{json,md,yml} && biome check --write",
+    "format": "prettier -w **/*.{json,md,yml,html} && biome check --write",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
@@ -20,9 +20,11 @@
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
     "@types/google-apps-script": "^1.0.100",
+    "cpx2": "^4.2.3",
     "esbuild": "^0.25.8",
     "lefthook": "^1.12.3",
     "prettier": "^3.6.2",
+    "rimraf": "^5.0.7",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
