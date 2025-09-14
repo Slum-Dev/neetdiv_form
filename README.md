@@ -1,18 +1,36 @@
-# NeetDivision LoL 申請管理
+![ニーディビロゴ](https://neetdi.vision/ndlogo.png)
 
-## 要件仕様
+# ニーディビLoL部情報登録フォームのGASスクリプト
 
-- Googleフォームの申請からGoogleスプレッドシート上でNeetDivisionの参加状況を管理する？
-- GASを利用してRiotAPIから参加者の情報を抽出して情報を補完する？
+![workflow](https://github.com/Slum-Dev/neetdiv_form/actions/workflows/test.yml/badge.svg)
 
-## 追加要件
+## 概要
 
-1. 募集しているレーン、チャンピオンと申請者が利用しているレーン、チャンピオンを突合し、該当する情報を色付けして確認できるようにする
-   1. 該当情報が何件存在するか集計できるようにする
-2. OPGGのURLを申請時に記載してもらい、情報を抽出する。
-   1. 足りない情報、補えない情報が存在する場合はRiotAPIを利用？
+ニートディビジョンLoL部募集用フォームの登録データを処理・整理するためのGASスクリプトです。
 
-## 参考ドキュメント
+## 開発環境構築
 
-- [RiotAPI 公式ドキュメント](https://developer.riotgames.com/apis)
-- [OPGG](https://op.gg/ja)
+本リポジトリは言語にTypeScriptを起用しており、またリンター・フォーマッターにBiome、テストにVitestなどを使用しているため開発環境の構築が必要となります。
+
+### Node.js & npm
+
+1. [Node.jsのHP](https://nodejs.org/ja/)から最新のLTSをダウンロードしインストール
+2. `node --version` と `npm --version` でインストール完了を確認
+3. 本プロジェクトのフォルダーで `npm install` を実行し必要なパッケージを導入
+
+### VS Code
+
+以下の拡張機能を追加するのを**強く**推奨します。（推奨拡張機能にも追加済）
+
+- EditorConfig for VS Code
+- Biome
+- Vitest
+
+以下の便利系拡張機能も合わせてオススメします。
+
+- Code Spell Checker
+- Git Graph
+
+## デプロイ
+
+`main`ブランチへマージされると、GitHub Actionsで自動でデプロイが行われます。
